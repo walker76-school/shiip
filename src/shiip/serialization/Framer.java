@@ -1,19 +1,48 @@
+/************************************************
+ *
+ * Author: Andrew Walker
+ * Assignment: Prog0
+ * Class: CSI 4321
+ *
+ ************************************************/
+
 package shiip.serialization;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.Objects;
 
+/**
+ * Serialize framed messages to given output stream
+ *
+ * @author Andrew Walker
+ */
 public class Framer {
 
     private OutputStream out;
+    private static final int BYTEMASK = 0xff;
+    private static final int BYTESHIFT = 8;
 
+    /**
+     * Construct framer with given output stream
+     *
+     * @param out byte sink
+     *
+     * @throws NullPointerException if out is null
+     */
     public Framer(OutputStream out){
         this.out = Objects.requireNonNull(out, "OutputStream may not be null");
     }
 
+    /**
+     * Create a frame by adding the prefix length to the given message and sending the entire frame
+     * (i.e., prefix length, headers, and payload)
+     *
+     * @param message next frame NOT including the prefix length (but DOES include the header)
+     *
+     * @throws IOException if I/O problem or frame payload too long
+     * @throws NullPointerException if message is null
+     */
     public void	putFrame(byte[] message) throws IOException, NullPointerException {
         Objects.requireNonNull(message, "Payload cannot be null");
 
@@ -30,15 +59,13 @@ public class Framer {
             throw new IOException("Payload is too long");
         }
 
-        // Encode the length of the payload in a 3-byte array
-        byte[] encodedLength = ByteBuffer.allocate(4).putInt(payloadLength).array();
-        encodedLength = Arrays.copyOfRange(encodedLength, 1,4);
+        // Write out the length prefix
+        this.out.write((payloadLength >> BYTESHIFT * 2) & BYTEMASK);
+        this.out.write((payloadLength >> BYTESHIFT) & BYTEMASK);
+        this.out.write(payloadLength & BYTEMASK);
 
-        // Merge the length and message together
-        byte[] encodedMessage = new byte[SerializationConstants.LENGTH_BYTES + message.length];
-        System.arraycopy(encodedLength, 0, encodedMessage, 0, SerializationConstants.LENGTH_BYTES);
-        System.arraycopy(message, 0, encodedMessage, SerializationConstants.LENGTH_BYTES, message.length);
-
-        this.out.write(encodedMessage);
+        // Write the message and flush
+        this.out.write(message);
+        this.out.flush();
     }
 }
