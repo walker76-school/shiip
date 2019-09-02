@@ -36,7 +36,7 @@ public class Deframer {
     /**
      * Get the next frame
      *
-     * @returns next frame NOT including the length (but DOES include the header)
+     * @return next frame NOT including the length (but DOES include the header)
      * @throws EOFException if premature EOF
      * @throws IOException if I/O error occurs
      */
@@ -47,7 +47,9 @@ public class Deframer {
             throw new EOFException("EOF reached before payload length read");
         }
 
-        int length = (lengthBuffer[0] & 0xFF) << 16 | (lengthBuffer[1] & 0xFF) << 8 | (lengthBuffer[2] & 0xFF);
+        int length = (lengthBuffer[0] & SerializationConstants.BYTEMASK) << SerializationConstants.BYTESHIFT * 2
+                        | (lengthBuffer[1] & SerializationConstants.BYTEMASK) << SerializationConstants.BYTESHIFT
+                        | (lengthBuffer[2] & SerializationConstants.BYTEMASK);
 
         if(length > SerializationConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES){
             throw new IOException("Message too long");

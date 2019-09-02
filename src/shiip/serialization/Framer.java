@@ -20,8 +20,6 @@ import java.util.Objects;
 public class Framer {
 
     private OutputStream out;
-    private static final int BYTEMASK = 0xff;
-    private static final int BYTESHIFT = 8;
 
     /**
      * Construct framer with given output stream
@@ -60,9 +58,9 @@ public class Framer {
         }
 
         // Write out the length prefix
-        this.out.write((payloadLength >> BYTESHIFT * 2) & BYTEMASK);
-        this.out.write((payloadLength >> BYTESHIFT) & BYTEMASK);
-        this.out.write(payloadLength & BYTEMASK);
+        this.out.write((payloadLength >> SerializationConstants.BYTESHIFT * 2) & SerializationConstants.BYTEMASK);
+        this.out.write((payloadLength >> SerializationConstants.BYTESHIFT) & SerializationConstants.BYTEMASK);
+        this.out.write(payloadLength & SerializationConstants.BYTEMASK);
 
         // Write the message and flush
         this.out.write(message);
