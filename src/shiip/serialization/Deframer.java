@@ -42,7 +42,7 @@ public class Deframer {
      */
     public byte[] getFrame() throws java.io.IOException {
         byte[] lengthBuffer = new byte[SerializationConstants.LENGTH_BYTES];
-        int bytesRead = in.readNBytes(lengthBuffer, 0, SerializationConstants.LENGTH_BYTES);
+        int bytesRead = in.read(lengthBuffer);
         if(bytesRead != SerializationConstants.LENGTH_BYTES){
             throw new EOFException("EOF reached before payload length read");
         }
@@ -58,7 +58,7 @@ public class Deframer {
         int totalLength = SerializationConstants.HEADER_BYTES + length;
 
         byte[] messageBuffer = new byte[totalLength];
-        bytesRead = in.readNBytes(messageBuffer, 0, totalLength);
+        bytesRead = in.read(messageBuffer);
         if(bytesRead != totalLength){
             throw new EOFException("EOF reached before payload read");
         }
