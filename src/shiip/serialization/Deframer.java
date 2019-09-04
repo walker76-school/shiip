@@ -20,6 +20,7 @@ import java.util.Objects;
  */
 public class Deframer {
 
+    // InputStream to read the frame in from
     private InputStream in;
 
     /**
@@ -44,24 +45,24 @@ public class Deframer {
     public byte[] getFrame() throws IOException, IllegalArgumentException {
 
         // Read the length in from the InputStream
-        byte[] lengthBuffer = new byte[SerializationConstants.LENGTH_BYTES];
+        byte[] lengthBuffer = new byte[FrameConstants.LENGTH_BYTES];
         int bytesRead = in.read(lengthBuffer);
-        if(bytesRead != SerializationConstants.LENGTH_BYTES){
+        if(bytesRead != FrameConstants.LENGTH_BYTES){
             throw new EOFException("EOF reached before payload length read");
         }
 
         // Convert bytes into length
-        int length = (lengthBuffer[0] & SerializationConstants.BYTEMASK) << SerializationConstants.BYTESHIFT * 2
-                        | (lengthBuffer[1] & SerializationConstants.BYTEMASK) << SerializationConstants.BYTESHIFT
-                        | (lengthBuffer[2] & SerializationConstants.BYTEMASK);
+        int length = (lengthBuffer[0] & FrameConstants.BYTEMASK) << FrameConstants.BYTESHIFT * 2
+                        | (lengthBuffer[1] & FrameConstants.BYTEMASK) << FrameConstants.BYTESHIFT
+                        | (lengthBuffer[2] & FrameConstants.BYTEMASK);
 
         // Check for valid length
-        if(length > SerializationConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES){
+        if(length > FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES){
             throw new IllegalArgumentException("Message too long");
         }
 
         // Read the rest of the message (header and payload)
-        int totalLength = SerializationConstants.HEADER_BYTES + length;
+        int totalLength = FrameConstants.HEADER_BYTES + length;
         byte[] messageBuffer = new byte[totalLength];
         bytesRead = in.read(messageBuffer);
 

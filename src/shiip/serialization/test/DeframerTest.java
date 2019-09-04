@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import shiip.serialization.Deframer;
-import shiip.serialization.SerializationConstants;
+import shiip.serialization.FrameConstants;
 
 import java.io.ByteArrayInputStream;
 import java.io.EOFException;
@@ -86,13 +86,13 @@ public class DeframerTest {
         @Test
         @DisplayName("Maximum length payload")
         public void testGetFrameMaximumPayload() {
-            byte[] message = new byte[SerializationConstants.HEADER_BYTES + SerializationConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES + SerializationConstants.LENGTH_BYTES];
+            byte[] message = new byte[FrameConstants.HEADER_BYTES + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES + FrameConstants.LENGTH_BYTES];
             message[1] = 0x40;
             ByteArrayInputStream in = new ByteArrayInputStream(message);
             Deframer deframer = new Deframer(in);
 
             assertDoesNotThrow(() -> {
-                byte[] solution = new byte[SerializationConstants.HEADER_BYTES + SerializationConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES];
+                byte[] solution = new byte[FrameConstants.HEADER_BYTES + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES];
                 assertArrayEquals(solution, deframer.getFrame());
             });
         }
@@ -117,7 +117,7 @@ public class DeframerTest {
         @Test
         @DisplayName("Oversized payload")
         public void testPutFrameOversizedPayload(){
-            byte[] message = new byte[SerializationConstants.HEADER_BYTES + SerializationConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES + SerializationConstants.LENGTH_BYTES + 1];
+            byte[] message = new byte[FrameConstants.HEADER_BYTES + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES + FrameConstants.LENGTH_BYTES + 1];
             message[1] = 0x40;
             message[2] = 0x01;
             ByteArrayInputStream in = new ByteArrayInputStream(message);
@@ -132,7 +132,7 @@ public class DeframerTest {
         @Test
         @DisplayName("Extra data payload")
         public void testPutFrameExtraDataPayload(){
-            byte[] message = new byte[SerializationConstants.HEADER_BYTES + SerializationConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES + + SerializationConstants.LENGTH_BYTES + 1];
+            byte[] message = new byte[FrameConstants.HEADER_BYTES + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES + + FrameConstants.LENGTH_BYTES + 1];
             message[1] = 0x40;
             ByteArrayInputStream in = new ByteArrayInputStream(message);
             Deframer deframer = new Deframer(in);
@@ -147,7 +147,7 @@ public class DeframerTest {
         @ValueSource(ints = {0, 1, 2, 3, 4, 5})
         @DisplayName("Missing headers")
         public void testPutFrameMissingHeaders(int headerLength){
-            byte[] message = new byte[SerializationConstants.LENGTH_BYTES + headerLength];
+            byte[] message = new byte[FrameConstants.LENGTH_BYTES + headerLength];
             ByteArrayInputStream in = new ByteArrayInputStream(message);
             Deframer deframer = new Deframer(in);
 

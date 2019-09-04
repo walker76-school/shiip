@@ -19,6 +19,7 @@ import java.util.Objects;
  */
 public class Framer {
 
+    // OutputStream to print the frame to
     private OutputStream out;
 
     /**
@@ -45,7 +46,7 @@ public class Framer {
         Objects.requireNonNull(message, "Payload cannot be null");
 
         // Retrieve the actual length of the payload without header
-        int payloadLength = message.length - SerializationConstants.HEADER_BYTES;
+        int payloadLength = message.length - FrameConstants.HEADER_BYTES;
 
         // Payload cannot be less than 0 or there is an issue with header
         if(payloadLength < 0){
@@ -53,14 +54,14 @@ public class Framer {
         }
 
         // Payload cannot be more than maximum length
-        if(payloadLength > SerializationConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES){
+        if(payloadLength > FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES){
             throw new IOException("Payload is too long");
         }
 
         // Write out the length prefix
-        this.out.write((payloadLength >> SerializationConstants.BYTESHIFT * 2) & SerializationConstants.BYTEMASK);
-        this.out.write((payloadLength >> SerializationConstants.BYTESHIFT) & SerializationConstants.BYTEMASK);
-        this.out.write(payloadLength & SerializationConstants.BYTEMASK);
+        this.out.write((payloadLength >> FrameConstants.BYTESHIFT * 2) & FrameConstants.BYTEMASK);
+        this.out.write((payloadLength >> FrameConstants.BYTESHIFT) & FrameConstants.BYTEMASK);
+        this.out.write(payloadLength & FrameConstants.BYTEMASK);
 
         // Write the message and flush
         this.out.write(message);
