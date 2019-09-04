@@ -39,31 +39,43 @@ public class Deframer {
      * @return next frame NOT including the length (but DOES include the header)
      * @throws EOFException if premature EOF
      * @throws IOException if I/O error occurs
+     * @throws IllegalArgumentException if bad value in input stream (e.g., bad length)
      */
-    public byte[] getFrame() throws java.io.IOException {
+    public byte[] getFrame() throws IOException, IllegalArgumentException {
+
+        // Read the length in from the InputStream
         byte[] lengthBuffer = new byte[SerializationConstants.LENGTH_BYTES];
         int bytesRead = in.read(lengthBuffer);
         if(bytesRead != SerializationConstants.LENGTH_BYTES){
             throw new EOFException("EOF reached before payload length read");
         }
 
+        // Convert bytes into length
         int length = (lengthBuffer[0] & SerializationConstants.BYTEMASK) << SerializationConstants.BYTESHIFT * 2
                         | (lengthBuffer[1] & SerializationConstants.BYTEMASK) << SerializationConstants.BYTESHIFT
                         | (lengthBuffer[2] & SerializationConstants.BYTEMASK);
 
+        // Check for valid length
         if(length > SerializationConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES){
-            throw new IOException("Message too long");
+            throw new IllegalArgumentException("Message too long");
         }
 
+        // Read the rest of the message (header and payload)
         int totalLength = SerializationConstants.HEADER_BYTES + length;
-
         byte[] messageBuffer = new byte[totalLength];
         bytesRead = in.read(messageBuffer);
+
+        // Verify that the whole message was read (length was valid)
         if(bytesRead != totalLength){
+
+            // Underfull payload
             throw new EOFException("EOF reached before payload read");
         }
 
+        // If there is extra payload then error
         if(in.available() > 0){
+
+            // Overfull payload
             throw new IOException("Length incorrect");
         }
 
