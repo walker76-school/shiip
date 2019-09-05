@@ -92,7 +92,8 @@ public class FramerTest {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             Framer framer = new Framer(out);
 
-            byte[] solution = new byte[FrameConstants.LENGTH_BYTES + FrameConstants.HEADER_BYTES + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES];
+            byte[] solution = new byte[FrameConstants.LENGTH_BYTES + FrameConstants.HEADER_BYTES
+                                            + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES];
             solution[1] = 0x40;
 
             assertDoesNotThrow(() -> framer.putFrame(message));
