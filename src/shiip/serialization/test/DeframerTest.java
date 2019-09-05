@@ -95,15 +95,15 @@ public class DeframerTest {
         @DisplayName("Maximum length payload")
         public void testGetFrameMaximumPayload() {
             byte[] message = new byte[FrameConstants.HEADER_BYTES
-                                        + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES
-                                        + FrameConstants.LENGTH_BYTES];
+                                    + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES
+                                    + FrameConstants.LENGTH_BYTES];
             message[1] = 0x40;
             ByteArrayInputStream in = new ByteArrayInputStream(message);
             Deframer deframer = new Deframer(in);
 
             assertDoesNotThrow(() -> {
                 byte[] solution = new byte[FrameConstants.HEADER_BYTES
-                                            + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES];
+                                    + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES];
 
                 assertArrayEquals(solution, deframer.getFrame());
             });
@@ -130,8 +130,8 @@ public class DeframerTest {
         @DisplayName("Oversized payload")
         public void testPutFrameOversizedPayload(){
             byte[] message = new byte[FrameConstants.HEADER_BYTES
-                                        + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES
-                                        + FrameConstants.LENGTH_BYTES + 1];
+                                    + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES
+                                    + FrameConstants.LENGTH_BYTES + 1];
             message[1] = 0x40;
             message[2] = 0x01;
             ByteArrayInputStream in = new ByteArrayInputStream(message);
@@ -147,8 +147,8 @@ public class DeframerTest {
         @DisplayName("Extra data payload")
         public void testPutFrameExtraDataPayload(){
             byte[] message = new byte[FrameConstants.HEADER_BYTES
-                                        + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES
-                                        + FrameConstants.LENGTH_BYTES + 1];
+                                    + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES
+                                    + FrameConstants.LENGTH_BYTES + 1];
             message[1] = 0x40;
             ByteArrayInputStream in = new ByteArrayInputStream(message);
             Deframer deframer = new Deframer(in);

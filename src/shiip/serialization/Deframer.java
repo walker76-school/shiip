@@ -40,7 +40,8 @@ public class Deframer {
      * @return next frame NOT including the length (but DOES include the header)
      * @throws EOFException if premature EOF
      * @throws IOException if I/O error occurs
-     * @throws IllegalArgumentException if bad value in input stream (e.g., bad length)
+     * @throws IllegalArgumentException if bad value in input stream
+     *                                      (e.g., bad length)
      */
     public byte[] getFrame() throws IOException, IllegalArgumentException {
 
@@ -52,8 +53,10 @@ public class Deframer {
         }
 
         // Convert bytes into length
-        int length = (lengthBuffer[0] & FrameConstants.BYTEMASK) << FrameConstants.BYTESHIFT * 2
-                        | (lengthBuffer[1] & FrameConstants.BYTEMASK) << FrameConstants.BYTESHIFT
+        int length = (lengthBuffer[0] & FrameConstants.BYTEMASK)
+                        << FrameConstants.BYTESHIFT * 2
+                        | (lengthBuffer[1] & FrameConstants.BYTEMASK)
+                        << FrameConstants.BYTESHIFT
                         | (lengthBuffer[2] & FrameConstants.BYTEMASK);
 
         // Check for valid length

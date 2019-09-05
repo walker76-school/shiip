@@ -34,10 +34,11 @@ public class Framer {
     }
 
     /**
-     * Create a frame by adding the prefix length to the given message and sending the entire frame
-     * (i.e., prefix length, headers, and payload)
+     * Create a frame by adding the prefix length to the given message and
+     * sending the entire frame (i.e., prefix length, headers, and payload)
      *
-     * @param message next frame NOT including the prefix length (but DOES include the header)
+     * @param message next frame NOT including the prefix length
+     *                      (but DOES include the header)
      *
      * @throws IOException if I/O problem or frame payload too long
      * @throws NullPointerException if message is null
@@ -59,8 +60,10 @@ public class Framer {
         }
 
         // Write out the length prefix
-        this.out.write((payloadLength >> FrameConstants.BYTESHIFT * 2) & FrameConstants.BYTEMASK);
-        this.out.write((payloadLength >> FrameConstants.BYTESHIFT) & FrameConstants.BYTEMASK);
+        this.out.write((payloadLength >> FrameConstants.BYTESHIFT * 2)
+                            & FrameConstants.BYTEMASK);
+        this.out.write((payloadLength >> FrameConstants.BYTESHIFT)
+                            & FrameConstants.BYTEMASK);
         this.out.write(payloadLength & FrameConstants.BYTEMASK);
 
         // Write the message and flush

@@ -55,7 +55,8 @@ public class FramerTest {
     public class PutFrame{
 
         /**
-         * Tests that a payload of length 0 and valid headers will result in an encoded length of 0
+         * Tests that a payload of length 0 and valid headers will result in an
+         * encoded length of 0
          */
         @Test
         @DisplayName("No payload")
@@ -65,11 +66,13 @@ public class FramerTest {
             Framer framer = new Framer(out);
 
             assertDoesNotThrow(() -> framer.putFrame(message));
-            assertArrayEquals(new byte[] {0, 0, 0, 5, 5, 5, 5, 5, 5}, out.toByteArray());
+            assertArrayEquals(new byte[] {0, 0, 0, 5, 5, 5, 5, 5, 5},
+                                out.toByteArray());
         }
 
         /**
-         * Tests that a valid payload and valid headers will result in a correctly encoded length
+         * Tests that a valid payload and valid headers will result in a
+         * correctly encoded length
          */
         @Test
         @DisplayName("Valid payload")
@@ -79,7 +82,8 @@ public class FramerTest {
             Framer framer = new Framer(out);
 
             assertDoesNotThrow(() -> framer.putFrame(message));
-            assertArrayEquals(new byte[] {0, 0, 1, 5, 5, 5, 5, 5, 5, 2}, out.toByteArray());
+            assertArrayEquals(new byte[] {0, 0, 1, 5, 5, 5, 5, 5, 5, 2},
+                                out.toByteArray());
         }
 
         /**
@@ -89,14 +93,14 @@ public class FramerTest {
         @DisplayName("Maximum length payload")
         public void testPutFrameMaxPayload(){
             byte[] message = new byte[FrameConstants.HEADER_BYTES
-                                        + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES];
+                                    + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES];
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             Framer framer = new Framer(out);
 
             byte[] solution = new byte[FrameConstants.LENGTH_BYTES
-                                        + FrameConstants.HEADER_BYTES
-                                        + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES];
+                                    + FrameConstants.HEADER_BYTES
+                                    + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES];
             solution[1] = 0x40;
 
             assertDoesNotThrow(() -> framer.putFrame(message));
@@ -120,7 +124,8 @@ public class FramerTest {
         @DisplayName("Oversized payload")
         public void testPutFrameOversizedPayload(){
             byte[] message = new byte[FrameConstants.HEADER_BYTES
-                                        + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES + 1];
+                                    + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES
+                                    + 1];
 
             Framer framer = new Framer(System.out);
             assertThrows(IOException.class, () -> framer.putFrame(message));
