@@ -19,9 +19,17 @@ import shiip.serialization.FrameConstants;
 import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
+import java.lang.IllegalArgumentException;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
+/**
+ * Tests Deframer
+ *
+ * @author Andrew Walker
+ */
 public class DeframerTest {
 
     /**

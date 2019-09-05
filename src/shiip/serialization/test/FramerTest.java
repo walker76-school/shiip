@@ -19,8 +19,15 @@ import shiip.serialization.FrameConstants;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
+/**
+ * Tests Framer
+ *
+ * @author Andrew Walker
+ */
 public class FramerTest {
 
     /**
