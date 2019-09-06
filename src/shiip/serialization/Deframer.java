@@ -43,7 +43,7 @@ public class Deframer {
      * @throws IllegalArgumentException if bad value in input stream
      *                                      (e.g., bad length)
      */
-    public byte[] getFrame() throws IOException, IllegalArgumentException {
+    public byte[] getFrame() throws IOException {
 
         // Read the length in from the InputStream
         byte[] lengthBuffer = new byte[FrameConstants.LENGTH_BYTES];
