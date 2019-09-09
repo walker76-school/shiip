@@ -101,11 +101,10 @@ public class DeframerTest {
             message[1] = 0x40;
             ByteArrayInputStream in = new ByteArrayInputStream(message);
             Deframer deframer = new Deframer(in);
+            byte[] solution = new byte[FrameConstants.HEADER_BYTES
+                    + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES];
 
             assertDoesNotThrow(() -> {
-                byte[] solution = new byte[FrameConstants.HEADER_BYTES
-                                    + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES];
-
                 assertArrayEquals(solution, deframer.getFrame());
             });
         }
@@ -159,7 +158,8 @@ public class DeframerTest {
          * Tests EOFException is thrown if underfull message
          */
         @Test
-        public void testMissmatchedLength(){
+        @DisplayName("Mismatched length")
+        public void testMismatchedLength(){
             byte[] message = new byte[]{0,0,1,5,5,5,5,5,5};
             ByteArrayInputStream in = new ByteArrayInputStream(message);
             Deframer deframer = new Deframer(in);
@@ -171,6 +171,7 @@ public class DeframerTest {
          * Tests IOException is thrown if broken InputStream
          */
         @Test
+        @DisplayName("Broken InputStream")
         public void testBrokenInputStream(){
             InputStream in = new InputStream() {
                 @Override

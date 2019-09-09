@@ -148,6 +148,7 @@ public class FramerTest {
          * Tests IOException is thrown if broken OutputStream
          */
         @Test
+        @DisplayName("Broken OutputStream")
         public void testBrokenOutputStream(){
             byte[] message = new byte[]{5, 5, 5, 5, 5, 5, 2};
             OutputStream out = new OutputStream() {
