@@ -18,6 +18,7 @@ import shiip.serialization.FrameConstants;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -140,6 +141,25 @@ public class FramerTest {
         public void testPutFrameMissingHeaders(int headerLength){
             byte[] message = new byte[headerLength];
             Framer framer = new Framer(System.out);
+            assertThrows(IOException.class, () -> framer.putFrame(message));
+        }
+
+        /**
+         * Tests IOException is thrown if broken OutputStream
+         */
+        @Test
+        public void testBrokenOutputStream(){
+            byte[] message = new byte[]{5, 5, 5, 5, 5, 5, 2};
+            OutputStream out = new OutputStream() {
+
+                @Override
+                public void write(int b) throws IOException {
+                    throw new IOException();
+                }
+            };
+
+            Framer framer = new Framer(out);
+
             assertThrows(IOException.class, () -> framer.putFrame(message));
         }
     }

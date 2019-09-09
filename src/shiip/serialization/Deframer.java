@@ -76,13 +76,6 @@ public class Deframer {
             throw new EOFException("EOF reached before payload read");
         }
 
-        // If there is extra payload then error
-        if(in.available() > 0){
-
-            // Overfull payload
-            throw new IOException("Length incorrect");
-        }
-
         return messageBuffer;
     }
 }

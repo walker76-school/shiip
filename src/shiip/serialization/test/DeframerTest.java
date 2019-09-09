@@ -19,6 +19,7 @@ import shiip.serialization.FrameConstants;
 import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.IllegalArgumentException;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -141,22 +142,6 @@ public class DeframerTest {
         }
 
         /**
-         * Test that IOException is thrown if extra data in message
-         */
-        @Test
-        @DisplayName("Extra data payload")
-        public void testPutFrameExtraDataPayload(){
-            byte[] message = new byte[FrameConstants.HEADER_BYTES
-                                    + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES
-                                    + FrameConstants.LENGTH_BYTES + 1];
-            message[1] = 0x40;
-            ByteArrayInputStream in = new ByteArrayInputStream(message);
-            Deframer deframer = new Deframer(in);
-
-            assertThrows(IOException.class, deframer::getFrame);
-        }
-
-        /**
          * Tests EOFException is thrown if missing headers
          */
         @ParameterizedTest(name = "header = {0}")
@@ -180,6 +165,23 @@ public class DeframerTest {
             Deframer deframer = new Deframer(in);
 
             assertThrows(EOFException.class, deframer::getFrame);
+        }
+
+        /**
+         * Tests IOException is thrown if broken InputStream
+         */
+        @Test
+        public void testBrokenInputStream(){
+            InputStream in = new InputStream() {
+                @Override
+                public int read() throws IOException {
+                    throw new IOException();
+                }
+            };
+
+            Deframer deframer = new Deframer(in);
+
+            assertThrows(IOException.class, deframer::getFrame);
         }
     }
 

@@ -60,14 +60,14 @@ public class Framer {
         }
 
         // Write out the length prefix
-        this.out.write((payloadLength >> FrameConstants.BYTESHIFT * 2)
+        out.write((payloadLength >> FrameConstants.BYTESHIFT * 2)
                             & FrameConstants.BYTEMASK);
-        this.out.write((payloadLength >> FrameConstants.BYTESHIFT)
+        out.write((payloadLength >> FrameConstants.BYTESHIFT)
                             & FrameConstants.BYTEMASK);
-        this.out.write(payloadLength & FrameConstants.BYTEMASK);
+        out.write(payloadLength & FrameConstants.BYTEMASK);
 
         // Write the message and flush
-        this.out.write(message);
-        this.out.flush();
+        out.write(message);
+        out.flush();
     }
 }
