@@ -1,5 +1,8 @@
 package shiip.serialization;
 
+import java.nio.ByteBuffer;
+import java.util.Objects;
+
 /**
  * Represents a SHiiP message
  * @author Andrew Walker
@@ -20,8 +23,67 @@ public class Message {
      * @throws BadAttributeException if validation failure
      * @return specific Message resulting from deserialization
      */
-    public static Message decode(byte[] msgBytes, com.twitter.hpack.Decoder decoder) throws BadAttributeException{
-        return null;
+    public static Message decode(byte[] msgBytes, com.twitter.hpack.Decoder decoder) throws BadAttributeException {
+        Objects.requireNonNull(msgBytes);
+
+        // Check for a valid length header
+        if(msgBytes.length < Constants.HEADER_BYTES){
+            throw new BadAttributeException("Malformed Header", "msgBytes");
+        }
+        ByteBuffer buffer = ByteBuffer.wrap(msgBytes);
+
+        // Get header and extract streamID
+        byte type = buffer.get();
+        byte flags = buffer.get();
+        int rAndStreamID = buffer.getInt();
+        int streamID = rAndStreamID & 0x7FFFFFFF;
+        int payloadLength = msgBytes.length - Constants.HEADER_BYTES;
+
+        if(type == Constants.DATA_TYPE){
+            // Check for errors
+            if((flags & (byte)0x8) == 8){
+                throw new BadAttributeException("Error bit is set", "errorBit");
+            }
+
+            // Retrieve isEnd from the flags
+            boolean isEnd = (flags & (byte)0x1) == 1;
+
+            // Retrieve the remaining data
+            byte[] data = new byte[payloadLength];
+            buffer.get(data);
+
+            return new Data(streamID, isEnd, data);
+        } else if (type == Constants.SETTINGS_TYPE) {
+            // Check for valid length frame
+            if(payloadLength != 0){
+                throw new BadAttributeException("Payload should be length 0", "payload");
+            }
+
+            // Check the correct flags are set for Settings
+            if(flags != 0x1){
+                throw new BadAttributeException("Flags must be 0x1 for Settings", "flags");
+            }
+
+            // Check the correct streamID is set for Settings
+            if(streamID != 0x0){
+                throw new BadAttributeException("StreamID must be 0x0 for Settings", "streamID");
+            }
+
+            return new Settings();
+        } else if (type == Constants.WINDOW_UPDATE_TYPE){
+            // Check for valid length frame
+            if(payloadLength < 4){
+                throw new BadAttributeException("Payload should be length 4", "payload");
+            }
+
+            // Get the payload and extract increment
+            int rAndIncrement = buffer.getInt();
+            int increment = rAndIncrement & 0x7FFFFFFF;
+
+            return new Window_Update(streamID, increment);
+        } else {
+            throw new BadAttributeException("Invalid type", "code");
+        }
     }
 
     /**
@@ -61,7 +123,7 @@ public class Message {
     public void setStreamID(int streamID) throws BadAttributeException {
         this.streamID = streamID;
     }
-
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import shiip.serialization.Deframer;
-import shiip.serialization.FrameConstants;
+import shiip.serialization.Constants;
 
 import java.io.ByteArrayInputStream;
 import java.io.EOFException;
@@ -95,14 +95,14 @@ public class DeframerTest {
         @Test
         @DisplayName("Maximum length payload")
         public void testGetFrameMaximumPayload() {
-            byte[] message = new byte[FrameConstants.HEADER_BYTES
-                                    + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES
-                                    + FrameConstants.LENGTH_BYTES];
+            byte[] message = new byte[Constants.HEADER_BYTES
+                                    + Constants.MAXIMUM_PAYLOAD_LENGTH_BYTES
+                                    + Constants.LENGTH_BYTES];
             message[1] = 0x40;
             ByteArrayInputStream in = new ByteArrayInputStream(message);
             Deframer deframer = new Deframer(in);
-            byte[] solution = new byte[FrameConstants.HEADER_BYTES
-                    + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES];
+            byte[] solution = new byte[Constants.HEADER_BYTES
+                    + Constants.MAXIMUM_PAYLOAD_LENGTH_BYTES];
 
             assertDoesNotThrow(() -> {
                 assertArrayEquals(solution, deframer.getFrame());
@@ -129,9 +129,9 @@ public class DeframerTest {
         @Test
         @DisplayName("Oversized payload")
         public void testPutFrameOversizedPayload(){
-            byte[] message = new byte[FrameConstants.HEADER_BYTES
-                                    + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES
-                                    + FrameConstants.LENGTH_BYTES + 1];
+            byte[] message = new byte[Constants.HEADER_BYTES
+                                    + Constants.MAXIMUM_PAYLOAD_LENGTH_BYTES
+                                    + Constants.LENGTH_BYTES + 1];
             message[1] = 0x40;
             message[2] = 0x01;
             ByteArrayInputStream in = new ByteArrayInputStream(message);
@@ -147,7 +147,7 @@ public class DeframerTest {
         @ValueSource(ints = {0, 1, 2, 3, 4, 5})
         @DisplayName("Missing headers")
         public void testPutFrameMissingHeaders(int headerLength){
-            byte[] message = new byte[FrameConstants.LENGTH_BYTES + headerLength];
+            byte[] message = new byte[Constants.LENGTH_BYTES + headerLength];
             ByteArrayInputStream in = new ByteArrayInputStream(message);
             Deframer deframer = new Deframer(in);
 

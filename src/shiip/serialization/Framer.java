@@ -47,7 +47,7 @@ public class Framer {
         Objects.requireNonNull(message, "Payload cannot be null");
 
         // Retrieve the actual length of the payload without header
-        int payloadLength = message.length - FrameConstants.HEADER_BYTES;
+        int payloadLength = message.length - Constants.HEADER_BYTES;
 
         // Payload cannot be less than 0 or there is an issue with header
         if(payloadLength < 0){
@@ -55,16 +55,16 @@ public class Framer {
         }
 
         // Payload cannot be more than maximum length
-        if(payloadLength > FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES){
+        if(payloadLength > Constants.MAXIMUM_PAYLOAD_LENGTH_BYTES){
             throw new IllegalArgumentException("Payload is too long");
         }
 
         // Write out the length prefix
-        out.write((payloadLength >> FrameConstants.BYTESHIFT * 2)
-                            & FrameConstants.BYTEMASK);
-        out.write((payloadLength >> FrameConstants.BYTESHIFT)
-                            & FrameConstants.BYTEMASK);
-        out.write(payloadLength & FrameConstants.BYTEMASK);
+        out.write((payloadLength >> Constants.BYTESHIFT * 2)
+                            & Constants.BYTEMASK);
+        out.write((payloadLength >> Constants.BYTESHIFT)
+                            & Constants.BYTEMASK);
+        out.write(payloadLength & Constants.BYTEMASK);
 
         // Write the message and flush
         out.write(message);

@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import shiip.serialization.Framer;
-import shiip.serialization.FrameConstants;
+import shiip.serialization.Constants;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -93,15 +93,15 @@ public class FramerTest {
         @Test
         @DisplayName("Maximum length payload")
         public void testPutFrameMaxPayload(){
-            byte[] message = new byte[FrameConstants.HEADER_BYTES
-                                    + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES];
+            byte[] message = new byte[Constants.HEADER_BYTES
+                                    + Constants.MAXIMUM_PAYLOAD_LENGTH_BYTES];
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             Framer framer = new Framer(out);
 
-            byte[] solution = new byte[FrameConstants.LENGTH_BYTES
-                                    + FrameConstants.HEADER_BYTES
-                                    + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES];
+            byte[] solution = new byte[Constants.LENGTH_BYTES
+                                    + Constants.HEADER_BYTES
+                                    + Constants.MAXIMUM_PAYLOAD_LENGTH_BYTES];
             solution[1] = 0x40;
 
             assertDoesNotThrow(() -> framer.putFrame(message));
@@ -124,8 +124,8 @@ public class FramerTest {
         @Test
         @DisplayName("Oversized payload")
         public void testPutFrameOversizedPayload(){
-            byte[] message = new byte[FrameConstants.HEADER_BYTES
-                                    + FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES
+            byte[] message = new byte[Constants.HEADER_BYTES
+                                    + Constants.MAXIMUM_PAYLOAD_LENGTH_BYTES
                                     + 1];
 
             Framer framer = new Framer(System.out);
