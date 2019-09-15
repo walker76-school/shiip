@@ -1,5 +1,8 @@
 package shiip.serialization;
 
+import com.twitter.hpack.Encoder;
+
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -73,6 +76,22 @@ public class Data extends Message {
      */
     public void	setEnd(boolean end) {
         this.isEnd = end;
+    }
+
+    @Override
+    public byte[] encode(Encoder encoder) {
+        ByteBuffer buffer = ByteBuffer.allocate(Constants.HEADER_BYTES + this.data.length);
+        byte type = (byte)0x0;
+        byte flags = (byte)0x0;
+        if(this.isEnd){
+            flags = (byte) (flags | 0x1);
+        }
+        buffer.put(type);
+        buffer.put(flags);
+        int rAndStreamID = this.streamID & 0x7FFFFFFF;
+        buffer.putInt(rAndStreamID);
+        buffer.put(this.data);
+        return buffer.array();
     }
 
     @Override

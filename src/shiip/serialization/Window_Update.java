@@ -1,5 +1,9 @@
 package shiip.serialization;
 
+import com.twitter.hpack.Encoder;
+
+import java.nio.ByteBuffer;
+
 /**
  * Window_Update frame
  * @author Andrew Walker
@@ -38,6 +42,25 @@ public class Window_Update extends Message {
             throw new BadAttributeException("Increment cannot be negative", "increment");
         }
         this.increment = increment;
+    }
+
+    @Override
+    public byte[] encode(Encoder encoder) {
+        ByteBuffer buffer = ByteBuffer.allocate(Constants.HEADER_BYTES + 4);
+
+        byte type = (byte)0x8;
+        buffer.put(type);
+
+        byte flags = (byte)0x0;
+        buffer.put(flags);
+
+        int rAndStreamID = this.streamID & 0x7FFFFFFF;
+        buffer.putInt(rAndStreamID);
+
+        int rAndIncrement = this.increment & 0x7FFFFFFF;
+        buffer.putInt(rAndIncrement);
+
+        return buffer.array();
     }
 
     @Override

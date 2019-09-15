@@ -1,5 +1,9 @@
 package shiip.serialization;
 
+import com.twitter.hpack.Encoder;
+
+import java.nio.ByteBuffer;
+
 /**
  * Settings message
  * @author Andrew Walker
@@ -36,6 +40,18 @@ public class Settings extends Message {
             throw new BadAttributeException("StreamID for Settings must be 0", "streamID");
         }
         this.streamID = streamID;
+    }
+
+    @Override
+    public byte[] encode(Encoder encoder) {
+        ByteBuffer buffer = ByteBuffer.allocate(Constants.HEADER_BYTES);
+        byte type = (byte)0x4;
+        byte flags = (byte)0x1;
+        buffer.put(type);
+        buffer.put(flags);
+        int rAndStreamID = this.streamID & 0x7FFFFFFF;
+        buffer.putInt(rAndStreamID);
+        return buffer.array();
     }
 
     /**

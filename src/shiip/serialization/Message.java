@@ -54,10 +54,6 @@ public class Message {
 
             return new Data(streamID, isEnd, data);
         } else if (type == Constants.SETTINGS_TYPE) {
-            // Check for valid length frame
-            if(payloadLength != 0){
-                throw new BadAttributeException("Payload should be length 0", "payload");
-            }
 
             // Check the correct flags are set for Settings
             if(flags != 0x1){
