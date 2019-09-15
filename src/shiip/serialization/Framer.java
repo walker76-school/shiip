@@ -51,12 +51,12 @@ public class Framer {
 
         // Payload cannot be less than 0 or there is an issue with header
         if(payloadLength < 0){
-            throw new IOException("Malformed header");
+            throw new IllegalArgumentException("Malformed header");
         }
 
         // Payload cannot be more than maximum length
         if(payloadLength > FrameConstants.MAXIMUM_PAYLOAD_LENGTH_BYTES){
-            throw new IOException("Payload is too long");
+            throw new IllegalArgumentException("Payload is too long");
         }
 
         // Write out the length prefix

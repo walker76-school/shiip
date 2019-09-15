@@ -7,16 +7,16 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import shiip.serialization.BadAttributeException;
 import shiip.serialization.Settings;
+import static shiip.serialization.test.TestingConstants.SETTINGS_TYPE;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
- * Tests the Settings object
+ * Tests the Settings class
  *
  * @author
  */
-public class SettingsTest {
+public class SettingsTester {
 
     /**
      * Tests the constructor of Settings
@@ -34,8 +34,20 @@ public class SettingsTest {
             assertDoesNotThrow(() -> {
                 Settings settings = new Settings();
                 assertAll(() -> assertEquals(0, settings.getStreamID()),
-                          () -> assertEquals((byte) 0x4, settings.getCode()));
+                          () -> assertEquals(SETTINGS_TYPE, settings.getCode()));
 
+            });
+        }
+
+        /**
+         * Tests code is the correct one for Settings
+         */
+        @Test
+        @DisplayName("code")
+        public void testConstructorCode() {
+            assertDoesNotThrow(() -> {
+                Settings settings = new Settings();
+                assertEquals((byte) 0x4, settings.getCode());
             });
         }
     }
@@ -48,7 +60,7 @@ public class SettingsTest {
     public class GetStreamID{
 
         /**
-         * Tests streamID is 0 even after setting it
+         * Tests streamID is 0
          */
         @Test
         @DisplayName("Valid")
@@ -96,6 +108,9 @@ public class SettingsTest {
         }
     }
 
+    /**
+     * Tests the toString of Data
+     */
     @Nested
     @DisplayName("toString")
     public class ToString {
@@ -104,7 +119,7 @@ public class SettingsTest {
          * Tests valid toString
          */
         @Test
-        @DisplayName("No setter")
+        @DisplayName("Valid")
         public void testToStringValid() {
             assertDoesNotThrow(() -> {
                 Settings settings = new Settings();
@@ -113,10 +128,17 @@ public class SettingsTest {
         }
     }
 
+    /**
+     * Tests the equals method of Data
+     */
     @Nested
     @DisplayName("equals")
     public class Equals{
 
+        /**
+         * Tests the default values of Settings match
+         * @throws BadAttributeException if invalid parameter
+         */
         @Test
         @DisplayName("Matched")
         public void testEqualsMatched() throws BadAttributeException {
@@ -125,10 +147,17 @@ public class SettingsTest {
         }
     }
 
+    /**
+     * Tests the hashcode method of Data
+     */
     @Nested
     @DisplayName("hashcode")
     public class Hashcode{
 
+        /**
+         * Tests the default values of Settings have same hashcode
+         * @throws BadAttributeException if invalid parameter
+         */
         @Test
         @DisplayName("Matched")
         public void testEqualsMatched() throws BadAttributeException {

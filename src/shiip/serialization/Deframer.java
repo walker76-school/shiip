@@ -47,7 +47,7 @@ public class Deframer {
 
         // Read the length in from the InputStream
         byte[] lengthBuffer = new byte[FrameConstants.LENGTH_BYTES];
-        int bytesRead = in.read(lengthBuffer);
+        int bytesRead = in.readNBytes(lengthBuffer, 0, FrameConstants.LENGTH_BYTES);
         if(bytesRead != FrameConstants.LENGTH_BYTES){
             throw new EOFException("EOF reached before payload length read");
         }
@@ -67,7 +67,7 @@ public class Deframer {
         // Read the rest of the message (header and payload)
         int totalLength = FrameConstants.HEADER_BYTES + length;
         byte[] messageBuffer = new byte[totalLength];
-        bytesRead = in.read(messageBuffer);
+        bytesRead = in.readNBytes(messageBuffer, 0, totalLength);
 
         // Verify that the whole message was read (length was valid)
         if(bytesRead != totalLength){
