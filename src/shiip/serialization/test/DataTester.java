@@ -396,7 +396,7 @@ public class DataTester {
      */
     @ParameterizedTest(name = "streamID = {0}, isEnd = {1}, data = {2}")
     @MethodSource("provideDataParametersValid")
-    @DisplayName("Valid")
+    @DisplayName("toString")
     public void testToStringValid(int streamID, boolean isEnd, byte[] data) {
         assertDoesNotThrow(() -> {
             Data dataObj = new Data(streamID, isEnd, data);

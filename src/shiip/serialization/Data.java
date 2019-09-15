@@ -21,12 +21,9 @@ public class Data extends Message {
      */
     public Data(int streamID, boolean isEnd, byte[] data) throws BadAttributeException {
         this.code = (byte)0x0;
-        if(streamID == 0){
-            throw new BadAttributeException("streamID cannot be 0", "");
-        }
-        this.streamID = streamID;
+        setStreamID(streamID);
         this.isEnd = isEnd;
-        this.data = data;
+        setData(data);
     }
 
     /**
@@ -46,11 +43,27 @@ public class Data extends Message {
     }
 
     /**
+     * Sets the stream ID in the frame. Stream ID validation depends on specific
+     * message type
+     * @param streamID new stream id value
+     * @throws BadAttributeException if input stream id is invalid
+     */
+    @Override
+    public final void setStreamID(int streamID) throws BadAttributeException {
+        if(streamID == 0){
+            throw new BadAttributeException("streamID cannot be 0", "streamID");
+        }
+        this.streamID = streamID;
+    }
+    /**
      * Set data
      * @param data data to set
      * @throws BadAttributeException if invalid
      */
-    public void	setData(byte[] data) throws BadAttributeException {
+    public final void setData(byte[] data) throws BadAttributeException {
+        if(data == null){
+            throw new BadAttributeException("Data cannot be null", "data");
+        }
         this.data = data;
     }
 
@@ -88,6 +101,6 @@ public class Data extends Message {
      */
     @Override
     public String toString() {
-        return String.format("Data: StreamID=%d isEnd=%b data: %d", streamID, isEnd, data.length);
+        return String.format("Data: StreamID=%d isEnd=%b data=%d", streamID, isEnd, data.length);
     }
 }

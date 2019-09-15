@@ -129,7 +129,7 @@ public class FramerTest {
                                     + 1];
 
             Framer framer = new Framer(System.out);
-            assertThrows(IOException.class, () -> framer.putFrame(message));
+            assertThrows(IllegalArgumentException.class, () -> framer.putFrame(message));
         }
 
         /**
@@ -141,7 +141,7 @@ public class FramerTest {
         public void testPutFrameMissingHeaders(int headerLength){
             byte[] message = new byte[headerLength];
             Framer framer = new Framer(System.out);
-            assertThrows(IOException.class, () -> framer.putFrame(message));
+            assertThrows(IllegalArgumentException.class, () -> framer.putFrame(message));
         }
 
         /**

@@ -11,8 +11,31 @@ public class Settings extends Message {
      * @throws BadAttributeException if attribute invalid (not thrown in this case)
      */
     public Settings() throws BadAttributeException {
-        this.streamID = 0;
+        setStreamID(0);
         this.code = (byte) 0x4;
+    }
+
+    /**
+     * Returns the stream ID
+     * @return stream ID
+     */
+    @Override
+    public int getStreamID() {
+        return 0;
+    }
+
+    /**
+     * Sets the stream ID in the frame. Stream ID validation depends on specific
+     * message type
+     * @param streamID new stream id value
+     * @throws BadAttributeException if input stream id is invalid
+     */
+    @Override
+    public final void setStreamID(int streamID) throws BadAttributeException {
+        if(streamID != 0){
+            throw new BadAttributeException("StreamID for Settings must be 0", "streamID");
+        }
+        this.streamID = streamID;
     }
 
     /**

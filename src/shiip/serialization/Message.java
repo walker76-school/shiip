@@ -61,4 +61,22 @@ public class Message {
     public void setStreamID(int streamID) throws BadAttributeException {
         this.streamID = streamID;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Message message = (Message) o;
+
+        if (streamID != message.streamID) return false;
+        return code == message.code;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = streamID;
+        result = 31 * result + (int) code;
+        return result;
+    }
 }
