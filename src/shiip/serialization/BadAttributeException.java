@@ -1,7 +1,12 @@
+/************************************************
+ * Author: Andrew Walker
+ * Assignment: Prog1
+ * Class: CSI 4321
+ ************************************************/
+
 package shiip.serialization;
 
 import java.io.Serializable;
-import java.util.Objects;
 
 /**
  * Thrown if problem with attribute

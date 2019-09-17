@@ -1,3 +1,9 @@
+/************************************************
+ * Author: Andrew Walker
+ * Assignment: Prog1
+ * Class: CSI 4321
+ ************************************************/
+
 package shiip.serialization;
 
 import java.nio.ByteBuffer;
@@ -23,7 +29,8 @@ public class Message {
      * @throws BadAttributeException if validation failure
      * @return specific Message resulting from deserialization
      */
-    public static Message decode(byte[] msgBytes, com.twitter.hpack.Decoder decoder) throws BadAttributeException {
+    public static Message decode(byte[] msgBytes, com.twitter.hpack.Decoder decoder)
+                                                throws BadAttributeException {
         Objects.requireNonNull(msgBytes);
 
         // Check for a valid length header
@@ -57,19 +64,22 @@ public class Message {
 
             // Check the correct flags are set for Settings
             if(flags != 0x1){
-                throw new BadAttributeException("Flags must be 0x1 for Settings", "flags");
+                throw new BadAttributeException("Flags must be 0x1 for Settings",
+                                                "flags");
             }
 
             // Check the correct streamID is set for Settings
             if(streamID != 0x0){
-                throw new BadAttributeException("StreamID must be 0x0 for Settings", "streamID");
+                throw new BadAttributeException("StreamID must be 0x0 for Settings",
+                                                "streamID");
             }
 
             return new Settings();
         } else if (type == Constants.WINDOW_UPDATE_TYPE){
             // Check for valid length frame
             if(payloadLength < 4){
-                throw new BadAttributeException("Payload should be length 4", "payload");
+                throw new BadAttributeException("Payload should be length 4",
+                                                "payload");
             }
 
             // Get the payload and extract increment

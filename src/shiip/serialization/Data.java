@@ -1,3 +1,9 @@
+/************************************************
+ * Author: Andrew Walker
+ * Assignment: Prog1
+ * Class: CSI 4321
+ ************************************************/
+
 package shiip.serialization;
 
 import com.twitter.hpack.Encoder;
@@ -22,7 +28,8 @@ public class Data extends Message {
      * @param data bytes of application data
      * @throws BadAttributeException if attribute invalid (set protocol spec)
      */
-    public Data(int streamID, boolean isEnd, byte[] data) throws BadAttributeException {
+    public Data(int streamID, boolean isEnd, byte[] data)
+                                                throws BadAttributeException {
         this.code = (byte)0x0;
         setStreamID(streamID);
         this.isEnd = isEnd;
@@ -78,9 +85,18 @@ public class Data extends Message {
         this.isEnd = end;
     }
 
+    /**
+     * Serializes message
+     * @param encoder encoder for serialization. Ignored (so can be null) if not
+     *                needed (determined by and specified in specific
+     *                message type)
+     * @throws NullPointerException if encoder is null + needed
+     * @return serialized message
+     */
     @Override
     public byte[] encode(Encoder encoder) {
-        ByteBuffer buffer = ByteBuffer.allocate(Constants.HEADER_BYTES + this.data.length);
+        ByteBuffer buffer = ByteBuffer.allocate(Constants.HEADER_BYTES
+                                                    + this.data.length);
         byte type = (byte)0x0;
         byte flags = (byte)0x0;
         if(this.isEnd){
@@ -120,6 +136,7 @@ public class Data extends Message {
      */
     @Override
     public String toString() {
-        return String.format("Data: StreamID=%d isEnd=%b data=%d", streamID, isEnd, data.length);
+        return String.format("Data: StreamID=%d isEnd=%b data=%d",
+                                streamID, isEnd, data.length);
     }
 }

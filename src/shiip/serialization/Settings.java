@@ -1,3 +1,9 @@
+/************************************************
+ * Author: Andrew Walker
+ * Assignment: Prog1
+ * Class: CSI 4321
+ ************************************************/
+
 package shiip.serialization;
 
 import com.twitter.hpack.Encoder;
@@ -37,11 +43,20 @@ public class Settings extends Message {
     @Override
     public final void setStreamID(int streamID) throws BadAttributeException {
         if(streamID != 0){
-            throw new BadAttributeException("StreamID for Settings must be 0", "streamID");
+            throw new BadAttributeException("StreamID for Settings must be 0",
+                                            "streamID");
         }
         this.streamID = streamID;
     }
 
+    /**
+     * Serializes message
+     * @param encoder encoder for serialization. Ignored (so can be null) if not
+     *                needed (determined by and specified in specific
+     *                message type)
+     * @throws NullPointerException if encoder is null + needed
+     * @return serialized message
+     */
     @Override
     public byte[] encode(Encoder encoder) {
         ByteBuffer buffer = ByteBuffer.allocate(Constants.HEADER_BYTES);

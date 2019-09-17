@@ -1,3 +1,9 @@
+/************************************************
+ * Author: Andrew Walker
+ * Assignment: Prog1
+ * Class: CSI 4321
+ ************************************************/
+
 package shiip.serialization;
 
 import com.twitter.hpack.Encoder;
@@ -15,10 +21,11 @@ public class Window_Update extends Message {
     /**
      * Creates Window_Update message from given values
      * @param streamID stream ID
-     * @param increment
+     * @param increment the increment
      * @throws BadAttributeException if attribute invalid (set protocol spec)
      */
-    public Window_Update(int streamID, int increment) throws BadAttributeException {
+    public Window_Update(int streamID, int increment)
+                                                throws BadAttributeException {
         this.code = 0x8;
         this.streamID = streamID;
         setIncrement(increment);
@@ -39,11 +46,20 @@ public class Window_Update extends Message {
      */
     public final void setIncrement(int increment) throws BadAttributeException {
         if(increment <= 0){
-            throw new BadAttributeException("Increment cannot be negative", "increment");
+            throw new BadAttributeException("Increment cannot be negative",
+                                            "increment");
         }
         this.increment = increment;
     }
 
+    /**
+     * Serializes message
+     * @param encoder encoder for serialization. Ignored (so can be null) if not
+     *                needed (determined by and specified in specific
+     *                message type)
+     * @throws NullPointerException if encoder is null + needed
+     * @return serialized message
+     */
     @Override
     public byte[] encode(Encoder encoder) {
         ByteBuffer buffer = ByteBuffer.allocate(Constants.HEADER_BYTES + 4);
@@ -90,7 +106,8 @@ public class Window_Update extends Message {
      */
     @Override
     public String toString() {
-        return String.format("Window_Update: StreamID=%d increment=%d", streamID, increment);
+        return String.format("Window_Update: StreamID=%d increment=%d",
+                                streamID, increment);
     }
 
 }

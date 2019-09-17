@@ -1,3 +1,9 @@
+/*******************************************************
+ * Author: Ian Laird, Andrew Walker
+ * Assignment: Prog 1
+ * Class: Data Comm
+ *******************************************************/
+
 package shiip.serialization.test;
 
 import org.junit.jupiter.api.DisplayName;
@@ -34,7 +40,8 @@ public class DataTester {
         @Test
         @DisplayName("Invalid streamID")
         public void testConstructorInvalidStreamID() {
-            BadAttributeException ex = assertThrows(BadAttributeException.class, () -> {
+            BadAttributeException ex = assertThrows(BadAttributeException.class,
+            () -> {
                 new Data(0, false, new byte[]{});
             });
             assertEquals(ex.getAttribute(), "streamID");
@@ -46,7 +53,8 @@ public class DataTester {
         @Test
         @DisplayName("Invalid data")
         public void testConstructorInvalidData() {
-            BadAttributeException ex = assertThrows(BadAttributeException.class, () -> {
+            BadAttributeException ex = assertThrows(BadAttributeException.class,
+            () -> {
                 new Data(1, false, null);
             });
             assertEquals(ex.getAttribute(), "data");
@@ -134,7 +142,8 @@ public class DataTester {
         @Test
         @DisplayName("null")
         public void testSetDataInvalidData() {
-            BadAttributeException ex = assertThrows(BadAttributeException.class, () -> {
+            BadAttributeException ex = assertThrows(BadAttributeException.class,
+            () -> {
                 Data data = new Data(1, false, new byte[]{});
                 data.setData(null);
             });
@@ -208,7 +217,8 @@ public class DataTester {
         @Test
         @DisplayName("Invalid")
         public void testConstructorInvalidData() {
-            BadAttributeException ex = assertThrows(BadAttributeException.class, () -> {
+            BadAttributeException ex = assertThrows(BadAttributeException.class,
+            () -> {
                 Data data = new Data(1, false, new byte[]{});
                 data.setStreamID(0);
             });
@@ -246,7 +256,8 @@ public class DataTester {
         @ParameterizedTest(name = "streamID = {0}")
         @ValueSource(ints = {-1, 10, 20})
         @DisplayName("Mismatched streamID")
-        public void testEqualsInvalidStreamID(int streamID) throws BadAttributeException {
+        public void testEqualsInvalidStreamID(int streamID)
+                                                throws BadAttributeException {
             Data data = new Data(1, false, new byte[]{});
             assertNotEquals(new Data(streamID, false, new byte[]{}), data);
         }
@@ -259,7 +270,8 @@ public class DataTester {
         @ParameterizedTest(name = "isEnd = {0}")
         @CsvSource({"true", "false"})
         @DisplayName("Mismatched isEnd")
-        public void testEqualsInvalidIsEnd(boolean isEnd) throws BadAttributeException {
+        public void testEqualsInvalidIsEnd(boolean isEnd)
+                                                throws BadAttributeException {
             Data data = new Data(1, !isEnd, new byte[]{});
             assertNotEquals(new Data(1, isEnd, new byte[]{}), data);
         }
@@ -294,7 +306,8 @@ public class DataTester {
         @ParameterizedTest(name = "streamID = {0}")
         @ValueSource(ints = {-1, 1, 10, 20})
         @DisplayName("Matched streamID")
-        public void testEqualsValidStreamID(int streamID) throws BadAttributeException {
+        public void testEqualsValidStreamID(int streamID)
+                                                throws BadAttributeException {
             Data data = new Data(streamID, false, new byte[]{});
             assertEquals(new Data(streamID, false, new byte[]{}), data);
         }
@@ -307,7 +320,8 @@ public class DataTester {
         @ParameterizedTest(name = "isEnd = {0}")
         @CsvSource({"true", "false"})
         @DisplayName("Matched isEnd")
-        public void testEqualsValidIsEnd(boolean isEnd) throws BadAttributeException {
+        public void testEqualsValidIsEnd(boolean isEnd)
+                                                throws BadAttributeException {
             Data data = new Data(1, isEnd, new byte[]{});
             assertEquals(new Data(1, isEnd, new byte[]{}), data);
         }
@@ -350,9 +364,11 @@ public class DataTester {
         @ParameterizedTest(name = "streamID = {0}")
         @ValueSource(ints = {-1, 1, 10, 20})
         @DisplayName("Matched streamID")
-        public void testHashcodeValidStreamID(int streamID) throws BadAttributeException {
+        public void testHashcodeValidStreamID(int streamID)
+                                                throws BadAttributeException {
             Data data = new Data(streamID, false, new byte[]{});
-            assertEquals(new Data(streamID, false, new byte[]{}).hashCode(), data.hashCode());
+            assertEquals(new Data(streamID, false, new byte[]{}).hashCode(),
+                            data.hashCode());
         }
 
         /**
@@ -363,9 +379,11 @@ public class DataTester {
         @ParameterizedTest(name = "isEnd = {0}")
         @CsvSource({"true", "false"})
         @DisplayName("Matched isEnd")
-        public void testHashcodeValidIsEnd(boolean isEnd) throws BadAttributeException {
+        public void testHashcodeValidIsEnd(boolean isEnd)
+                                                throws BadAttributeException {
             Data data = new Data(1, isEnd, new byte[]{});
-            assertEquals(new Data(1, isEnd, new byte[]{}).hashCode(), data.hashCode());
+            assertEquals(new Data(1, isEnd, new byte[]{}).hashCode(),
+                            data.hashCode());
         }
 
         /**
@@ -376,7 +394,8 @@ public class DataTester {
         @DisplayName("Matched data full")
         public void testHashcodeValidDataFull() throws BadAttributeException {
             Data data = new Data(1, false, new byte[]{1,2,3});
-            assertEquals(new Data(1, false, new byte[]{1,2,3}).hashCode(), data.hashCode());
+            assertEquals(new Data(1, false, new byte[]{1,2,3}).hashCode(),
+                            data.hashCode());
         }
 
         /**
@@ -387,7 +406,8 @@ public class DataTester {
         @DisplayName("Matched data empty")
         public void testHashcodeValidDataEmpty() throws BadAttributeException {
             Data data = new Data(1, false, new byte[]{});
-            assertEquals(new Data(1, false, new byte[]{}).hashCode(), data.hashCode());
+            assertEquals(new Data(1, false, new byte[]{}).hashCode(),
+                            data.hashCode());
         }
     }
 
@@ -400,7 +420,8 @@ public class DataTester {
     public void testToStringValid(int streamID, boolean isEnd, byte[] data) {
         assertDoesNotThrow(() -> {
             Data dataObj = new Data(streamID, isEnd, data);
-            String rep = String.format("Data: StreamID=%d isEnd=%b data=%d", streamID, isEnd, data.length);
+            String rep = String.format("Data: StreamID=%d isEnd=%b data=%d",
+                                        streamID, isEnd, data.length);
             assertEquals(rep, dataObj.toString());
         });
     }

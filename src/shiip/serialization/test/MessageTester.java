@@ -1,5 +1,5 @@
 /*******************************************************
- * Author: Ian Laird, Andrew walker
+ * Author: Ian Laird, Andrew Walker
  * Assignment: Prog 1
  * Class: Data Comm
  *******************************************************/
@@ -26,9 +26,6 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class MessageTester {
 
-    private static Encoder encoder = null;
-    private static Decoder decoder = null;
-
     private static byte [] TEST_HEADER_1 =
             {0x0,0x0,0x0,0x0,0x0,0x1,0x0,0x0,0x0,0x0};
     private static byte [] TEST_HEADER_BAD_TYPE  =
@@ -42,7 +39,7 @@ public class MessageTester {
      * the contents are 0,1,2,3,4,5
      */
     private static byte [] GOOD_DATA_ONE =
-            {0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
+        {0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
     private static Data CORRECT_DATA_ONE = null;
     private static byte [] CORRECT_DATA_ONE_ENCODED = null;
 
@@ -54,7 +51,7 @@ public class MessageTester {
      * the contents are 0,1,2,3,4,5
      */
     private static byte [] BAD_DATA_ONE =
-            {0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
+        {0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
 
     /*
      * an example data frame that has a six byte payload
@@ -64,7 +61,7 @@ public class MessageTester {
      * the contents are 0,1,2,3,4,5
      */
     private static byte [] BAD_DATA_TWO =
-            {0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
+        {0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
 
     /*
      * an example settings frame that has no payload
@@ -175,7 +172,7 @@ public class MessageTester {
         @Test
         void testNullMsgBytes() {
             assertThrows(NullPointerException.class, () -> {
-                Message.decode(null, decoder);
+                Message.decode(null, null);
             });
         }
 
@@ -186,7 +183,7 @@ public class MessageTester {
         @Test
         void testInvalidType() {
             assertThrows(BadAttributeException.class,() -> {
-                Message.decode(TEST_HEADER_BAD_TYPE, decoder);
+                Message.decode(TEST_HEADER_BAD_TYPE, null);
             });
         }
 
@@ -204,7 +201,7 @@ public class MessageTester {
             @Test
             void testDataFrameRecognized() {
                 assertDoesNotThrow(() -> {
-                    Message message = Message.decode(GOOD_DATA_ONE, decoder);
+                    Message message = Message.decode(GOOD_DATA_ONE, null);
                     assertNotNull(message);
                     assertEquals(message.getCode(), DATA_TYPE);
                 });
@@ -217,7 +214,7 @@ public class MessageTester {
             @Test
             void testDataFrameReadIn() {
                 assertDoesNotThrow(() -> {
-                    Message message = Message.decode(GOOD_DATA_ONE, decoder);
+                    Message message = Message.decode(GOOD_DATA_ONE, null);
                     Data data = (Data) message;
                     assertEquals(data, CORRECT_DATA_ONE);
                 });
@@ -230,7 +227,7 @@ public class MessageTester {
             @Test
             void testDataFrameBadBit() {
                 assertThrows(BadAttributeException.class, () -> {
-                    Message.decode(BAD_DATA_ONE, decoder);
+                    Message.decode(BAD_DATA_ONE, null);
                 });
             }
 
@@ -241,7 +238,7 @@ public class MessageTester {
             @Test
             void testDataFrameStreamIdentifierZero() {
                 assertThrows(BadAttributeException.class, () -> {
-                    Message.decode(BAD_DATA_TWO, decoder);
+                    Message.decode(BAD_DATA_TWO, null);
                 });
             }
         }
@@ -256,7 +253,7 @@ public class MessageTester {
             @Test
             void testSettingsFrameRecognized() {
                 assertDoesNotThrow(() -> {
-                    Message message = Message.decode(GOOD_SETTINGS_ONE, decoder);
+                    Message message = Message.decode(GOOD_SETTINGS_ONE, null);
                     assertNotNull(message);
                     assertEquals(message.getCode(), SETTINGS_TYPE);
                 });
@@ -269,7 +266,7 @@ public class MessageTester {
             @Test
             void testSettingsFramePayload() {
                 assertDoesNotThrow(() -> {
-                    Message.decode(GOOD_SETTINGS_TWO, decoder);
+                    Message.decode(GOOD_SETTINGS_TWO, null);
                 });
             }
 
@@ -280,7 +277,7 @@ public class MessageTester {
             @Test
             void testSettingsFrameBadStreamIdentifier() {
                 assertThrows(BadAttributeException.class, () -> {
-                    Message.decode(BAD_SETTINGS_ONE, decoder);
+                    Message.decode(BAD_SETTINGS_ONE, null);
                 });
             }
 
@@ -291,7 +288,7 @@ public class MessageTester {
             @Test
             void testSettingsFrameBadFlags() {
                 assertThrows(BadAttributeException.class, () -> {
-                    Message.decode(BAD_SETTINGS_TWO, decoder);
+                    Message.decode(BAD_SETTINGS_TWO, null);
                 });
             }
         }
@@ -311,7 +308,7 @@ public class MessageTester {
             void testWindowUpdateFrameRecognized() {
                 assertDoesNotThrow(() -> {
                     Message message =
-                            Message.decode(GOOD_WINDOW_UPDATE_ONE, decoder);
+                            Message.decode(GOOD_WINDOW_UPDATE_ONE, null);
                     assertEquals(message.getCode(), WINDOW_UPDATE_TYPE);
                 });
             }
@@ -323,7 +320,7 @@ public class MessageTester {
             @Test
             void testWindowsUpdateRPaylaod() {
                 assertDoesNotThrow(() -> {
-                    Message.decode(GOOD_WINDOW_UPDATE_TWO, decoder);
+                    Message.decode(GOOD_WINDOW_UPDATE_TWO, null);
                 });
             }
 
@@ -334,7 +331,7 @@ public class MessageTester {
             @Test
             void testWindowsUpdateFrameShort() {
                 assertThrows(BadAttributeException.class, () -> {
-                    Message.decode(BAD_WINDOW_UPDATE_ONE, decoder);
+                    Message.decode(BAD_WINDOW_UPDATE_ONE, null);
                 });
             }
         }

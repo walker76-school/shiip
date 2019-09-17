@@ -1,3 +1,9 @@
+/*******************************************************
+ * Author: Ian Laird, Andrew Walker
+ * Assignment: Prog 1
+ * Class: Data Comm
+ *******************************************************/
+
 package shiip.serialization.test;
 
 import org.junit.jupiter.api.DisplayName;
@@ -100,7 +106,8 @@ public class SettingsTester {
         @DisplayName("Invalid")
         public void testToStringSetter(int streamID) {
 
-            BadAttributeException ex = assertThrows(BadAttributeException.class, () -> {
+            BadAttributeException ex = assertThrows(BadAttributeException.class,
+            () -> {
                 Settings settings = new Settings();
                 settings.setStreamID(streamID);
             });

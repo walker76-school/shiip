@@ -1,5 +1,5 @@
 /*******************************************************
- * Author: Ian Laird, Andrew walker
+ * Author: Ian Laird, Andrew Walker
  * Assignment: Prog 1
  * Class: Data Comm
  *******************************************************/

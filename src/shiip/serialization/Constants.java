@@ -1,9 +1,7 @@
 /************************************************
- *
  * Author: Andrew Walker
- * Assignment: Prog0
+ * Assignment: Prog1
  * Class: CSI 4321
- *
  ************************************************/
 
 package shiip.serialization;
