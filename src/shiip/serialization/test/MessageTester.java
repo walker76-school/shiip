@@ -287,7 +287,7 @@ public class MessageTester {
             @DisplayName("Bad Flags")
             @Test
             void testSettingsFrameBadFlags() {
-                assertThrows(BadAttributeException.class, () -> {
+                assertDoesNotThrow( () -> {
                     Message.decode(BAD_SETTINGS_TWO, null);
                 });
             }

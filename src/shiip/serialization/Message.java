@@ -62,12 +62,6 @@ public class Message {
             return new Data(streamID, isEnd, data);
         } else if (type == Constants.SETTINGS_TYPE) {
 
-            // Check the correct flags are set for Settings
-            if(flags != 0x1){
-                throw new BadAttributeException("Flags must be 0x1 for Settings",
-                                                "flags");
-            }
-
             // Check the correct streamID is set for Settings
             if(streamID != 0x0){
                 throw new BadAttributeException("StreamID must be 0x0 for Settings",
