@@ -30,11 +30,11 @@ public class Constants {
     public static final int BYTESHIFT = 8;
 
     // Data identifier type
-    static final byte DATA_TYPE = (byte)0x0;
+    public static final byte DATA_TYPE = (byte)0x0;
 
     // Settings identifier type
-    static final byte SETTINGS_TYPE = (byte)0x4;
+    public static final byte SETTINGS_TYPE = (byte)0x4;
 
     // Window_Update identifier type
-    static final byte WINDOW_UPDATE_TYPE = (byte)0x8;
+    public static final byte WINDOW_UPDATE_TYPE = (byte)0x8;
 }

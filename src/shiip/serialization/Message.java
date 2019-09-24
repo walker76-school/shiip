@@ -49,7 +49,7 @@ public class Message {
         if(type == Constants.DATA_TYPE){
             // Check for errors
             if((flags & (byte)0x8) == 8){
-                throw new BadAttributeException("Error bit is set", "errorBit");
+                throw new BadAttributeException("Error bit is set", "flags");
             }
 
             // Retrieve isEnd from the flags
