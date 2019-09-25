@@ -49,6 +49,16 @@ public class Settings extends Message {
         this.streamID = streamID;
     }
 
+    public static Message decode(int streamID, int flags, byte[] payload) throws BadAttributeException{
+        // Check the correct streamID is set for Settings
+        if(streamID != 0x0){
+            throw new BadAttributeException("StreamID must be 0x0 for Settings",
+                    "streamID");
+        }
+
+        return new Settings();
+    }
+
     /**
      * Serializes message
      * @param encoder encoder for serialization. Ignored (so can be null) if not

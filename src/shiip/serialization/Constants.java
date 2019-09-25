@@ -32,6 +32,9 @@ public class Constants {
     // Data identifier type
     public static final byte DATA_TYPE = (byte)0x0;
 
+    // Data identifier type
+    public static final byte HEADERS_TYPE = (byte)0x1;
+
     // Settings identifier type
     public static final byte SETTINGS_TYPE = (byte)0x4;
 

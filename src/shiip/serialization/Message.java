@@ -6,6 +6,8 @@
 
 package shiip.serialization;
 
+import com.twitter.hpack.Decoder;
+
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
@@ -29,7 +31,7 @@ public class Message {
      * @throws BadAttributeException if validation failure
      * @return specific Message resulting from deserialization
      */
-    public static Message decode(byte[] msgBytes, com.twitter.hpack.Decoder decoder)
+    public static Message decode(byte[] msgBytes, Decoder decoder)
                                                 throws BadAttributeException {
         Objects.requireNonNull(msgBytes);
 
@@ -45,44 +47,21 @@ public class Message {
         int rAndStreamID = buffer.getInt();
         int streamID = rAndStreamID & 0x7FFFFFFF;
         int payloadLength = msgBytes.length - Constants.HEADER_BYTES;
+        // Retrieve the remaining data
+        byte[] payload = new byte[payloadLength];
+        buffer.get(payload);
 
-        if(type == Constants.DATA_TYPE){
-            // Check for errors
-            if((flags & (byte)0x8) == 8){
-                throw new BadAttributeException("Error bit is set", "flags");
-            }
-
-            // Retrieve isEnd from the flags
-            boolean isEnd = (flags & (byte)0x1) == 1;
-
-            // Retrieve the remaining data
-            byte[] data = new byte[payloadLength];
-            buffer.get(data);
-
-            return new Data(streamID, isEnd, data);
-        } else if (type == Constants.SETTINGS_TYPE) {
-
-            // Check the correct streamID is set for Settings
-            if(streamID != 0x0){
-                throw new BadAttributeException("StreamID must be 0x0 for Settings",
-                                                "streamID");
-            }
-
-            return new Settings();
-        } else if (type == Constants.WINDOW_UPDATE_TYPE){
-            // Check for valid length frame
-            if(payloadLength < 4){
-                throw new BadAttributeException("Payload should be length 4",
-                                                "payload");
-            }
-
-            // Get the payload and extract increment
-            int rAndIncrement = buffer.getInt();
-            int increment = rAndIncrement & 0x7FFFFFFF;
-
-            return new Window_Update(streamID, increment);
-        } else {
-            throw new BadAttributeException("Invalid type", "code");
+        switch(type){
+            case Constants.DATA_TYPE:
+                return Data.decode(streamID, flags, payload);
+            case Constants.HEADERS_TYPE:
+                return Headers.decode(decoder, streamID, flags, payload);
+            case Constants.SETTINGS_TYPE:
+                return Settings.decode(streamID, flags, payload);
+            case Constants.WINDOW_UPDATE_TYPE:
+                return Window_Update.decode(streamID, flags, payload);
+            default:
+                throw new BadAttributeException("Invalid type", "code");
         }
     }
 

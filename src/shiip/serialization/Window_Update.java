@@ -52,6 +52,21 @@ public class Window_Update extends Message {
         this.increment = increment;
     }
 
+    public static Message decode(int streamID, int flags, byte[] payload) throws BadAttributeException{
+        // Check for valid length frame
+        if(payload.length < 4){
+            throw new BadAttributeException("Payload should be length 4",
+                    "payload");
+        }
+
+        ByteBuffer buffer = ByteBuffer.wrap(payload);
+        // Get the payload and extract increment
+        int rAndIncrement = buffer.getInt();
+        int increment = rAndIncrement & 0x7FFFFFFF;
+
+        return new Window_Update(streamID, increment);
+    }
+
     /**
      * Serializes message
      * @param encoder encoder for serialization. Ignored (so can be null) if not

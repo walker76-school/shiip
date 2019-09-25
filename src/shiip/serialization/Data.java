@@ -85,6 +85,18 @@ public class Data extends Message {
         this.isEnd = end;
     }
 
+    public static Message decode(int streamID, int flags, byte[] payload) throws BadAttributeException{
+        // Check for errors
+        if((flags & (byte)0x8) == 8){
+            throw new BadAttributeException("Error bit is set", "flags");
+        }
+
+        // Retrieve isEnd from the flags
+        boolean isEnd = (flags & (byte)0x1) == 1;
+
+        return new Data(streamID, isEnd, payload);
+    }
+
     /**
      * Serializes message
      * @param encoder encoder for serialization. Ignored (so can be null) if not
