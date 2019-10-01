@@ -40,4 +40,6 @@ public class Constants {
 
     // Window_Update identifier type
     public static final byte WINDOW_UPDATE_TYPE = (byte)0x8;
+
+    public static final int MAX_DATA_SIZE = 16384;
 }

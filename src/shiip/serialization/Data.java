@@ -73,6 +73,11 @@ public class Data extends Message {
         if(data == null){
             throw new BadAttributeException("Data cannot be null", "data");
         }
+
+        if(data.length > Constants.MAX_DATA_SIZE){
+            throw new BadAttributeException("Data is too large", "data");
+        }
+
         this.data = data;
     }
 
@@ -90,6 +95,7 @@ public class Data extends Message {
         int rAndStreamID = buffer.getInt();
         int streamID = rAndStreamID & 0x7FFFFFFF;
         int payloadLength = buffer.remaining();
+
         // Retrieve the remaining data
         byte[] payload = new byte[payloadLength];
         buffer.get(payload);
