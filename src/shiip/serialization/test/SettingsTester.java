@@ -1,9 +1,3 @@
-/*******************************************************
- * Author: Ian Laird, Andrew Walker
- * Assignment: Prog 1
- * Class: Data Comm
- *******************************************************/
-
 package shiip.serialization.test;
 
 import org.junit.jupiter.api.DisplayName;
@@ -13,9 +7,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import shiip.serialization.BadAttributeException;
 import shiip.serialization.Settings;
-import static shiip.serialization.test.TestingConstants.SETTINGS_TYPE;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static shiip.serialization.test.TestingConstants.SETTINGS_TYPE;
 
 /**
  * Tests the Settings class
@@ -106,8 +100,7 @@ public class SettingsTester {
         @DisplayName("Invalid")
         public void testToStringSetter(int streamID) {
 
-            BadAttributeException ex = assertThrows(BadAttributeException.class,
-            () -> {
+            BadAttributeException ex = assertThrows(BadAttributeException.class, () -> {
                 Settings settings = new Settings();
                 settings.setStreamID(streamID);
             });

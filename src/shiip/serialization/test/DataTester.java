@@ -1,9 +1,3 @@
-/*******************************************************
- * Author: Ian Laird, Andrew Walker
- * Assignment: Prog 1
- * Class: Data Comm
- *******************************************************/
-
 package shiip.serialization.test;
 
 import org.junit.jupiter.api.DisplayName;
@@ -16,11 +10,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import shiip.serialization.BadAttributeException;
 import shiip.serialization.Data;
-import static shiip.serialization.test.TestingConstants.DATA_TYPE;
 
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static shiip.serialization.test.TestingConstants.DATA_TYPE;
 
 /**
  * Tests the Data class
@@ -37,12 +31,12 @@ public class DataTester {
         /**
          * Tests constructor with invalid streamID
          */
-        @Test
+        @ParameterizedTest(name = "streamID = {0}")
+        @ValueSource(ints = {-10, -1, 0})
         @DisplayName("Invalid streamID")
-        public void testConstructorInvalidStreamID() {
-            BadAttributeException ex = assertThrows(BadAttributeException.class,
-            () -> {
-                new Data(0, false, new byte[]{});
+        public void testConstructorInvalidStreamID(int streamID) {
+            BadAttributeException ex = assertThrows(BadAttributeException.class, () -> {
+                new Data(streamID, false, new byte[]{});
             });
             assertEquals(ex.getAttribute(), "streamID");
         }
@@ -53,8 +47,7 @@ public class DataTester {
         @Test
         @DisplayName("Invalid data")
         public void testConstructorInvalidData() {
-            BadAttributeException ex = assertThrows(BadAttributeException.class,
-            () -> {
+            BadAttributeException ex = assertThrows(BadAttributeException.class, () -> {
                 new Data(1, false, null);
             });
             assertEquals(ex.getAttribute(), "data");
@@ -65,7 +58,7 @@ public class DataTester {
          * @param streamID valid streamID
          */
         @ParameterizedTest(name = "streamID = {0}")
-        @ValueSource(ints = {-1, 1, 10, 20})
+        @ValueSource(ints = {1, 10, 20})
         @DisplayName("Valid streamID")
         public void testConstructorStreamID(int streamID){
             assertDoesNotThrow(() -> {
@@ -142,8 +135,7 @@ public class DataTester {
         @Test
         @DisplayName("null")
         public void testSetDataInvalidData() {
-            BadAttributeException ex = assertThrows(BadAttributeException.class,
-            () -> {
+            BadAttributeException ex = assertThrows(BadAttributeException.class, () -> {
                 Data data = new Data(1, false, new byte[]{});
                 data.setData(null);
             });
@@ -214,13 +206,13 @@ public class DataTester {
         /**
          * Tests that BadAttributeException is thrown on invalid streamID
          */
-        @Test
+        @ParameterizedTest(name = "streamID = {0}")
+        @ValueSource(ints = {-10, -1, 0})
         @DisplayName("Invalid")
-        public void testConstructorInvalidData() {
-            BadAttributeException ex = assertThrows(BadAttributeException.class,
-            () -> {
+        public void testConstructorInvalidData(int streamID) {
+            BadAttributeException ex = assertThrows(BadAttributeException.class, () -> {
                 Data data = new Data(1, false, new byte[]{});
-                data.setStreamID(0);
+                data.setStreamID(streamID);
             });
             assertEquals(ex.getAttribute(), "streamID");
         }
@@ -230,7 +222,7 @@ public class DataTester {
          * @param streamID valid streamID
          */
         @ParameterizedTest(name = "streamID = {0}")
-        @ValueSource(ints = {-1, 1, 10, 20})
+        @ValueSource(ints = {1, 10, 20})
         @DisplayName("Valid")
         public void testConstructorStreamID(int streamID){
             assertDoesNotThrow(() -> {
@@ -254,10 +246,9 @@ public class DataTester {
          * @throws BadAttributeException if invalid parameter
          */
         @ParameterizedTest(name = "streamID = {0}")
-        @ValueSource(ints = {-1, 10, 20})
+        @ValueSource(ints = {10, 20})
         @DisplayName("Mismatched streamID")
-        public void testEqualsInvalidStreamID(int streamID)
-                                                throws BadAttributeException {
+        public void testEqualsInvalidStreamID(int streamID) throws BadAttributeException {
             Data data = new Data(1, false, new byte[]{});
             assertNotEquals(new Data(streamID, false, new byte[]{}), data);
         }
@@ -270,8 +261,7 @@ public class DataTester {
         @ParameterizedTest(name = "isEnd = {0}")
         @CsvSource({"true", "false"})
         @DisplayName("Mismatched isEnd")
-        public void testEqualsInvalidIsEnd(boolean isEnd)
-                                                throws BadAttributeException {
+        public void testEqualsInvalidIsEnd(boolean isEnd) throws BadAttributeException {
             Data data = new Data(1, !isEnd, new byte[]{});
             assertNotEquals(new Data(1, isEnd, new byte[]{}), data);
         }
@@ -304,10 +294,9 @@ public class DataTester {
          * @throws BadAttributeException if invalid parameter
          */
         @ParameterizedTest(name = "streamID = {0}")
-        @ValueSource(ints = {-1, 1, 10, 20})
+        @ValueSource(ints = {1, 10, 20})
         @DisplayName("Matched streamID")
-        public void testEqualsValidStreamID(int streamID)
-                                                throws BadAttributeException {
+        public void testEqualsValidStreamID(int streamID) throws BadAttributeException {
             Data data = new Data(streamID, false, new byte[]{});
             assertEquals(new Data(streamID, false, new byte[]{}), data);
         }
@@ -320,8 +309,7 @@ public class DataTester {
         @ParameterizedTest(name = "isEnd = {0}")
         @CsvSource({"true", "false"})
         @DisplayName("Matched isEnd")
-        public void testEqualsValidIsEnd(boolean isEnd)
-                                                throws BadAttributeException {
+        public void testEqualsValidIsEnd(boolean isEnd) throws BadAttributeException {
             Data data = new Data(1, isEnd, new byte[]{});
             assertEquals(new Data(1, isEnd, new byte[]{}), data);
         }
@@ -362,13 +350,11 @@ public class DataTester {
          * @throws BadAttributeException if invalid parameter
          */
         @ParameterizedTest(name = "streamID = {0}")
-        @ValueSource(ints = {-1, 1, 10, 20})
+        @ValueSource(ints = {1, 10, 20})
         @DisplayName("Matched streamID")
-        public void testHashcodeValidStreamID(int streamID)
-                                                throws BadAttributeException {
+        public void testHashcodeValidStreamID(int streamID) throws BadAttributeException {
             Data data = new Data(streamID, false, new byte[]{});
-            assertEquals(new Data(streamID, false, new byte[]{}).hashCode(),
-                            data.hashCode());
+            assertEquals(new Data(streamID, false, new byte[]{}).hashCode(), data.hashCode());
         }
 
         /**
@@ -379,11 +365,9 @@ public class DataTester {
         @ParameterizedTest(name = "isEnd = {0}")
         @CsvSource({"true", "false"})
         @DisplayName("Matched isEnd")
-        public void testHashcodeValidIsEnd(boolean isEnd)
-                                                throws BadAttributeException {
+        public void testHashcodeValidIsEnd(boolean isEnd) throws BadAttributeException {
             Data data = new Data(1, isEnd, new byte[]{});
-            assertEquals(new Data(1, isEnd, new byte[]{}).hashCode(),
-                            data.hashCode());
+            assertEquals(new Data(1, isEnd, new byte[]{}).hashCode(), data.hashCode());
         }
 
         /**
@@ -394,8 +378,7 @@ public class DataTester {
         @DisplayName("Matched data full")
         public void testHashcodeValidDataFull() throws BadAttributeException {
             Data data = new Data(1, false, new byte[]{1,2,3});
-            assertEquals(new Data(1, false, new byte[]{1,2,3}).hashCode(),
-                            data.hashCode());
+            assertEquals(new Data(1, false, new byte[]{1,2,3}).hashCode(), data.hashCode());
         }
 
         /**
@@ -406,8 +389,7 @@ public class DataTester {
         @DisplayName("Matched data empty")
         public void testHashcodeValidDataEmpty() throws BadAttributeException {
             Data data = new Data(1, false, new byte[]{});
-            assertEquals(new Data(1, false, new byte[]{}).hashCode(),
-                            data.hashCode());
+            assertEquals(new Data(1, false, new byte[]{}).hashCode(), data.hashCode());
         }
     }
 
@@ -416,22 +398,17 @@ public class DataTester {
      */
     @ParameterizedTest(name = "streamID = {0}, isEnd = {1}, data = {2}")
     @MethodSource("provideDataParametersValid")
-    @DisplayName("toString")
+    @DisplayName("Valid")
     public void testToStringValid(int streamID, boolean isEnd, byte[] data) {
         assertDoesNotThrow(() -> {
             Data dataObj = new Data(streamID, isEnd, data);
-            String rep = String.format("Data: StreamID=%d isEnd=%b data=%d",
-                                        streamID, isEnd, data.length);
+            String rep = String.format("Data: StreamID=%d isEnd=%b data=%d", streamID, isEnd, data.length);
             assertEquals(rep, dataObj.toString());
         });
     }
 
     private static Stream<Arguments> provideDataParametersValid() {
         return Stream.of(
-            Arguments.of(-1, true, new byte[]{}),
-            Arguments.of(-1, true, new byte[]{1,2,3}),
-            Arguments.of(-1, false, new byte[]{}),
-            Arguments.of(-1, false, new byte[]{1,2,3}),
             Arguments.of(1, true, new byte[]{}),
             Arguments.of(1, true, new byte[]{1,2,3}),
             Arguments.of(1, false, new byte[]{}),

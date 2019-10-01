@@ -15,6 +15,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -24,6 +26,8 @@ import java.util.*;
  * @version 1.1
  */
 public class Headers extends Message {
+
+    private static final Charset CHARENC = StandardCharsets.US_ASCII;
 
     private boolean isEnd;
     private Map<String, String> headerValues;
@@ -40,10 +44,19 @@ public class Headers extends Message {
         this.headerValues = new TreeMap<>();
     }
 
-    public static Message decode(Decoder decoder, int streamID, int flags, byte[] payload) throws BadAttributeException{
-        // Check the correct streamID is set for Settings
-        if(streamID != 0x0){
-            throw new BadAttributeException("StreamID must be 0x0 for Headers",
+    public static Message decode(Decoder decoder, ByteBuffer buffer) throws BadAttributeException{
+
+        byte flags = buffer.get();
+        int rAndStreamID = buffer.getInt();
+        int streamID = rAndStreamID & 0x7FFFFFFF;
+        int payloadLength = buffer.remaining();
+        // Retrieve the remaining data
+        byte[] payload = new byte[payloadLength];
+        buffer.get(payload);
+
+        // Check the correct streamID is set for Headers
+        if(streamID == 0x0){
+            throw new BadAttributeException("StreamID cannot be 0x0 for Headers",
                     "streamID");
         }
 
@@ -66,7 +79,7 @@ public class Headers extends Message {
         ByteArrayInputStream in = new ByteArrayInputStream(payload);
         try {
             decoder.decode(in, (name, value, sensitive) -> {
-                headerValues.put(Arrays.toString(name), Arrays.toString(value));
+                headerValues.put(b2s(name), b2s(value));
             });
         } catch (IOException e) {
             throw new BadAttributeException("Invalid headers", "headers", e);
@@ -131,7 +144,7 @@ public class Headers extends Message {
 
     @Override
     public void setStreamID(int streamID) throws BadAttributeException {
-        if(streamID == 0){
+        if(streamID <= 0){
             throw new BadAttributeException("StreamID cannot be 0", "streamID");
         }
         this.streamID = streamID;
@@ -147,6 +160,7 @@ public class Headers extends Message {
     public String toString(){
         StringBuilder builder = new StringBuilder();
         builder.append(String.format("Headers: StreamID=%d isEnd=%b (", this.streamID, this.isEnd));
+
         for(Map.Entry<String, String> entry : this.headerValues.entrySet()){
             builder.append(String.format("[%s=%s]", entry.getKey(), entry.getValue()));
         }
@@ -168,13 +182,7 @@ public class Headers extends Message {
      * @return set of names
      */
     public SortedSet<String> getNames(){
-        SortedSet<String> names = new TreeSet<>();
-        names.add(":host");
-        names.add(":method");
-        names.add(":path");
-        names.add(":scheme");
-        names.add(":version");
-        return names;
+        return new TreeSet<>(this.headerValues.keySet());
     }
 
     /**
@@ -213,12 +221,6 @@ public class Headers extends Message {
             }
         }
 
-//        for(String s : getNames()){
-//            if (s.equals(name)) {
-//                return true;
-//            }
-//        }
-
         return true;
     }
 
@@ -234,6 +236,14 @@ public class Headers extends Message {
         }
 
         return true;
+    }
+
+    private static byte[] s2b(String v) {
+        return v.getBytes(CHARENC);
+    }
+
+    private static String b2s(byte[] b) {
+        return new String(b, CHARENC);
     }
 
     @Override

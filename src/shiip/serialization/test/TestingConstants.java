@@ -1,5 +1,5 @@
 /*******************************************************
- * Author: Ian Laird, Andrew Walker
+ * Author: Ian Laird, Andrew walker
  * Assignment: Prog 1
  * Class: Data Comm
  *******************************************************/
@@ -12,7 +12,7 @@ package shiip.serialization.test;
  * @version 1.0
  * @author Ian Laird, Andrew Walker
  */
-class TestingConstants {
+public final class TestingConstants {
 
     // Maximum size of the payload
     public static final int MAXIMUM_PAYLOAD_SIZE = 16384;
@@ -26,14 +26,14 @@ class TestingConstants {
     // Data identifier type
     public static final byte DATA_TYPE = (byte)0x0;
 
-    // Headers identifier type
-    static final byte HEADERS_TYPE = (byte)0x1;
-
     // Settings identifier type
     public static final byte SETTINGS_TYPE = (byte)0x4;
 
     // Window_Update identifier type
     public static final byte WINDOW_UPDATE_TYPE = (byte)0x8;
+
+    // Headers identifier type
+    public static final byte HEADERS_TYPE = (byte)0x1;
 
     // Unset flags field
     public static final byte NO_FLAGS = 0x0;
@@ -55,4 +55,8 @@ class TestingConstants {
 
     // Position of the second R bit in the header of a Window_Update
     public static final int BYTE_CONTAINING_SECOND_R_BIT_WINDOW_UPDATE = 7;
+
+    // Largest possible increment for Window_Update
+    public static final int LARGEST_INT = 2147483647;
+
 }

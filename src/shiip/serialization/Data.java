@@ -10,7 +10,6 @@ import com.twitter.hpack.Encoder;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.Objects;
 
 /**
  * Data message
@@ -30,7 +29,6 @@ public class Data extends Message {
      */
     public Data(int streamID, boolean isEnd, byte[] data)
                                                 throws BadAttributeException {
-        this.code = (byte)0x0;
         setStreamID(streamID);
         this.isEnd = isEnd;
         setData(data);
@@ -60,11 +58,12 @@ public class Data extends Message {
      */
     @Override
     public final void setStreamID(int streamID) throws BadAttributeException {
-        if(streamID == 0){
+        if(streamID <= 0){
             throw new BadAttributeException("streamID cannot be 0", "streamID");
         }
         this.streamID = streamID;
     }
+
     /**
      * Set data
      * @param data data to set
@@ -85,7 +84,16 @@ public class Data extends Message {
         this.isEnd = end;
     }
 
-    public static Message decode(int streamID, int flags, byte[] payload) throws BadAttributeException{
+    public static Message decode(ByteBuffer buffer) throws BadAttributeException {
+
+        byte flags = buffer.get();
+        int rAndStreamID = buffer.getInt();
+        int streamID = rAndStreamID & 0x7FFFFFFF;
+        int payloadLength = buffer.remaining();
+        // Retrieve the remaining data
+        byte[] payload = new byte[payloadLength];
+        buffer.get(payload);
+
         // Check for errors
         if((flags & (byte)0x8) == 8){
             throw new BadAttributeException("Error bit is set", "flags");
@@ -123,18 +131,26 @@ public class Data extends Message {
     }
 
     @Override
+    public byte getCode() {
+        return 0x0;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
         Data data1 = (Data) o;
-        return streamID == data1.streamID &&
-                isEnd == data1.isEnd &&
-                Arrays.equals(data, data1.data);
+
+        if (isEnd != data1.isEnd) return false;
+        return Arrays.equals(data, data1.data);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(streamID, isEnd);
+        int result = super.hashCode();
+        result = 31 * result + (isEnd ? 1 : 0);
         result = 31 * result + Arrays.hashCode(data);
         return result;
     }

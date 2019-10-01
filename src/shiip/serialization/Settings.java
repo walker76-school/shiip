@@ -22,7 +22,6 @@ public class Settings extends Message {
      */
     public Settings() throws BadAttributeException {
         setStreamID(0);
-        this.code = (byte) 0x4;
     }
 
     /**
@@ -49,7 +48,16 @@ public class Settings extends Message {
         this.streamID = streamID;
     }
 
-    public static Message decode(int streamID, int flags, byte[] payload) throws BadAttributeException{
+    public static Message decode(ByteBuffer buffer) throws BadAttributeException {
+
+        byte flags = buffer.get();
+        int rAndStreamID = buffer.getInt();
+        int streamID = rAndStreamID & 0x7FFFFFFF;
+        int payloadLength = buffer.remaining();
+        // Retrieve the remaining data
+        byte[] payload = new byte[payloadLength];
+        buffer.get(payload);
+
         // Check the correct streamID is set for Settings
         if(streamID != 0x0){
             throw new BadAttributeException("StreamID must be 0x0 for Settings",
@@ -77,6 +85,11 @@ public class Settings extends Message {
         int rAndStreamID = this.streamID & 0x7FFFFFFF;
         buffer.putInt(rAndStreamID);
         return buffer.array();
+    }
+
+    @Override
+    public byte getCode() {
+        return 0x4;
     }
 
     /**

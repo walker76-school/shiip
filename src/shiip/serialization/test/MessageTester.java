@@ -1,5 +1,5 @@
 /*******************************************************
- * Author: Ian Laird, Andrew Walker
+ * Author: Ian Laird, Andrew walker
  * Assignment: Prog 1
  * Class: Data Comm
  *******************************************************/
@@ -12,22 +12,41 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 import shiip.serialization.*;
-import static shiip.serialization.test.TestingConstants.*;
+
+import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static shiip.serialization.test.TestingConstants.*;
 
 
 /**
- * Performs testing for the {@link shiip.serialization.Message}.
+ * Performs testing for the {@link Message}.
  *
  * @version 1.0
  * @author Ian Laird, Andrew Walker
  */
 public class MessageTester {
 
-    private static byte [] TEST_HEADER_1 =
-            {0x0,0x0,0x0,0x0,0x0,0x1,0x0,0x0,0x0,0x0};
+    // the encoder instances for the tests
+    private static Encoder encoder = null, encoder2 = null;
+
+    // the decoder instance for the tests
+    private static Decoder decoder = null;
+
+
     private static byte [] TEST_HEADER_BAD_TYPE  =
             {(byte)0xEE,0x0,0x0,0x0,0x0,0x1};
 
@@ -39,9 +58,15 @@ public class MessageTester {
      * the contents are 0,1,2,3,4,5
      */
     private static byte [] GOOD_DATA_ONE =
-        {0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
+            {0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
     private static Data CORRECT_DATA_ONE = null;
     private static byte [] CORRECT_DATA_ONE_ENCODED = null;
+
+    // max header size for encoder and decoder
+    private static int MAX_HEADER_SIZE = 1024;
+
+    // max header table size
+    private static int MAX_HEADER_TABLE_SIZE = 1024;
 
     /*
      * an example data frame that has a six byte payload
@@ -51,7 +76,7 @@ public class MessageTester {
      * the contents are 0,1,2,3,4,5
      */
     private static byte [] BAD_DATA_ONE =
-        {0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
+            {0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
 
     /*
      * an example data frame that has a six byte payload
@@ -61,7 +86,7 @@ public class MessageTester {
      * the contents are 0,1,2,3,4,5
      */
     private static byte [] BAD_DATA_TWO =
-        {0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
+            {0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
 
     /*
      * an example settings frame that has no payload
@@ -129,11 +154,37 @@ public class MessageTester {
      * an example window update frame
      * the type is 8
      * the flags are 0
+     * the stream identifier is max value
+     * the payload is 4 octets and the R bit is set and increment is max value
+     */
+    private static byte [] GOOD_WINDOW_UPDATE_THREE =
+            {0x08, 0x00, (byte)0xff, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF,(byte)0xFF,(byte)0xFF,(byte)0xFF };
+
+    /*
+     * an example window update frame
+     * the type is 8
+     * the flags are 0
      * the stream identifier is one
      * the payload is 3 octets BAD!!! and contains 1
      */
     private static byte [] BAD_WINDOW_UPDATE_ONE =
             {0x08, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x01};
+
+    /*
+     * an example data header
+     * the type is headers (1)
+     * HDR is set
+     * the stream identifier is one
+     */
+    private static byte [] GOOD_HEADERS_HEADER_ONE = {0x01, 0x04, 0x00, 0x00, 0x00, 0x01};
+
+    /*
+     * an example data header
+     * the type is headers (1)
+     * HDR is set and end stream
+     * the stream identifier is three
+     */
+    private static byte [] GOOD_HEADERS_HEADER_TWO = {0x01, 0x05, 0x00, 0x00, 0x00, 0x03};
 
     /**
      * init the static objects
@@ -142,7 +193,7 @@ public class MessageTester {
     public static void initialize(){
         assertDoesNotThrow(() -> {
             CORRECT_DATA_ONE = new Data(1,false,
-                                new byte[] {0x00, 0x01, 0x02, 0x03, 0x04, 0x05});
+                    new byte[] {0x00, 0x01, 0x02, 0x03, 0x04, 0x05});
             CORRECT_SETTINGS_ONE = new Settings();
             CORRECT_WINDOW_UPDATE_ONE = new Window_Update(1,1);
 
@@ -152,11 +203,17 @@ public class MessageTester {
                     CORRECT_SETTINGS_ONE.encode(null);
             CORRECT_WINDOw_UPDATE_ENCODED =
                     CORRECT_WINDOW_UPDATE_ONE.encode(null);
+
+            // encode header list into header block
+            encoder = new Encoder(MAX_HEADER_TABLE_SIZE);
+            encoder2 = new Encoder(MAX_HEADER_TABLE_SIZE);
+            decoder = new Decoder(MAX_HEADER_SIZE, MAX_HEADER_TABLE_SIZE);
+
         });
     }
 
     /**
-     * Performs decoding a {@link shiip.serialization.Message}.
+     * Performs decoding a {@link Message}.
      *
      * @version 1.0
      * @author Ian Laird, Andrew Walker
@@ -172,7 +229,7 @@ public class MessageTester {
         @Test
         void testNullMsgBytes() {
             assertThrows(NullPointerException.class, () -> {
-                Message.decode(null, null);
+                Message.decode(null, decoder);
             });
         }
 
@@ -183,7 +240,7 @@ public class MessageTester {
         @Test
         void testInvalidType() {
             assertThrows(BadAttributeException.class,() -> {
-                Message.decode(TEST_HEADER_BAD_TYPE, null);
+                Message.decode(TEST_HEADER_BAD_TYPE, decoder);
             });
         }
 
@@ -201,7 +258,7 @@ public class MessageTester {
             @Test
             void testDataFrameRecognized() {
                 assertDoesNotThrow(() -> {
-                    Message message = Message.decode(GOOD_DATA_ONE, null);
+                    Message message = Message.decode(GOOD_DATA_ONE, decoder);
                     assertNotNull(message);
                     assertEquals(message.getCode(), DATA_TYPE);
                 });
@@ -214,7 +271,7 @@ public class MessageTester {
             @Test
             void testDataFrameReadIn() {
                 assertDoesNotThrow(() -> {
-                    Message message = Message.decode(GOOD_DATA_ONE, null);
+                    Message message = Message.decode(GOOD_DATA_ONE, decoder);
                     Data data = (Data) message;
                     assertEquals(data, CORRECT_DATA_ONE);
                 });
@@ -227,7 +284,7 @@ public class MessageTester {
             @Test
             void testDataFrameBadBit() {
                 assertThrows(BadAttributeException.class, () -> {
-                    Message.decode(BAD_DATA_ONE, null);
+                    Message.decode(BAD_DATA_ONE, decoder);
                 });
             }
 
@@ -238,7 +295,7 @@ public class MessageTester {
             @Test
             void testDataFrameStreamIdentifierZero() {
                 assertThrows(BadAttributeException.class, () -> {
-                    Message.decode(BAD_DATA_TWO, null);
+                    Message.decode(BAD_DATA_TWO, decoder);
                 });
             }
         }
@@ -253,7 +310,7 @@ public class MessageTester {
             @Test
             void testSettingsFrameRecognized() {
                 assertDoesNotThrow(() -> {
-                    Message message = Message.decode(GOOD_SETTINGS_ONE, null);
+                    Message message = Message.decode(GOOD_SETTINGS_ONE, decoder);
                     assertNotNull(message);
                     assertEquals(message.getCode(), SETTINGS_TYPE);
                 });
@@ -266,7 +323,7 @@ public class MessageTester {
             @Test
             void testSettingsFramePayload() {
                 assertDoesNotThrow(() -> {
-                    Message.decode(GOOD_SETTINGS_TWO, null);
+                    Message.decode(GOOD_SETTINGS_TWO, decoder);
                 });
             }
 
@@ -277,7 +334,7 @@ public class MessageTester {
             @Test
             void testSettingsFrameBadStreamIdentifier() {
                 assertThrows(BadAttributeException.class, () -> {
-                    Message.decode(BAD_SETTINGS_ONE, null);
+                    Message.decode(BAD_SETTINGS_ONE, decoder);
                 });
             }
 
@@ -287,8 +344,8 @@ public class MessageTester {
             @DisplayName("Bad Flags")
             @Test
             void testSettingsFrameBadFlags() {
-                assertDoesNotThrow( () -> {
-                    Message.decode(BAD_SETTINGS_TWO, null);
+                assertDoesNotThrow(() -> {
+                    Message.decode(BAD_SETTINGS_TWO, decoder);
                 });
             }
         }
@@ -308,7 +365,7 @@ public class MessageTester {
             void testWindowUpdateFrameRecognized() {
                 assertDoesNotThrow(() -> {
                     Message message =
-                            Message.decode(GOOD_WINDOW_UPDATE_ONE, null);
+                            Message.decode(GOOD_WINDOW_UPDATE_ONE, decoder);
                     assertEquals(message.getCode(), WINDOW_UPDATE_TYPE);
                 });
             }
@@ -320,7 +377,20 @@ public class MessageTester {
             @Test
             void testWindowsUpdateRPaylaod() {
                 assertDoesNotThrow(() -> {
-                    Message.decode(GOOD_WINDOW_UPDATE_TWO, null);
+                    Message.decode(GOOD_WINDOW_UPDATE_TWO, decoder);
+                });
+            }
+
+            /**
+             * R bit and max increment size
+             */
+            @DisplayName("Big Increment")
+            @Test
+            void testWindowsUpdateMaxIncrement() {
+                assertDoesNotThrow(() -> {
+                    Window_Update wu = (Window_Update) Message.decode(GOOD_WINDOW_UPDATE_THREE, decoder);
+                    assertEquals(wu.getIncrement(), LARGEST_INT);
+                    assertEquals(wu.getStreamID(), LARGEST_INT);
                 });
             }
 
@@ -331,14 +401,14 @@ public class MessageTester {
             @Test
             void testWindowsUpdateFrameShort() {
                 assertThrows(BadAttributeException.class, () -> {
-                    Message.decode(BAD_WINDOW_UPDATE_ONE, null);
+                    Message.decode(BAD_WINDOW_UPDATE_ONE, decoder);
                 });
             }
         }
     }
 
     /**
-     * Performs encoding a {@link shiip.serialization.Message}.
+     * Performs encoding a {@link Message}.
      *
      * @version 1.0
      * @author Ian Laird, Andrew Walker
@@ -459,6 +529,115 @@ public class MessageTester {
         public void testWindowUpdateEncoding(){
             assertArrayEquals(GOOD_WINDOW_UPDATE_ONE,
                     CORRECT_WINDOw_UPDATE_ENCODED);
+        }
+
+        /**
+         * @author Ian laird, Andrew Walker
+         * tests headers
+         */
+        @Nested
+        @DisplayName("Headers tester")
+        public class HeaderTester{
+
+            /**
+             * tests headers source
+             * @param streamId the stream id to test
+             * @param stuff the name and value pairs
+             * @param headerPlusPayload the encoded expectation
+             */
+            @ParameterizedTest(name = "streamID = {0}, encoded = {2}")
+            @DisplayName("Encoding Tests")
+            @ArgumentsSource(MessageArgs.class)
+            public void
+            testHeadersEncoding(int streamId, Map<String, String> stuff, byte [] headerPlusPayload){
+                try{
+                    Headers h = new Headers(streamId, false);
+                    for (Map.Entry<String, String> entry : stuff.entrySet()) {
+                        h.addValue(entry.getKey(), entry.getValue());
+                    }
+                    byte [] generated = h.encode(encoder2);
+                    Headers reGenerated = (Headers) Message.decode(generated, decoder);
+                    assertEquals(h, reGenerated);
+                }catch(Exception e){
+                    fail(e.getMessage());
+                }
+            }
+        }
+    }
+
+    /**
+     * @author Ian Laird, Andrew Walker
+     * provides arguments for Message tests
+     */
+    static class MessageArgs implements ArgumentsProvider {
+
+        /**
+         * provide arguments
+         */
+        @Override
+        public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) throws Exception {
+            List<Integer> validStreamIDs = Arrays.asList( 1, 2876);
+            List<Map<String, String>> validPayloads = Arrays.asList(
+                    new TreeMap<>(),
+                    Map.of(":method", "GET"),
+                    Map.of(":method", "POST", ":version", "HTTP/2.0"),
+                    Map.of(":host", "duckduckgo.com", ":method", "PUT", ":scheme", "https")
+            );
+
+            return validStreamIDs
+                    .stream()
+                    .flatMap(streamID ->
+
+                            validPayloads
+                                    .stream()
+                                    .map(( payload) -> {
+                                        return Arguments.of(streamID, payload, mergeTwoArrays(expectedHeader(streamID), compress(payload)));
+                                    })
+
+                    );
+        }
+
+        /**
+         * gives the expected header for the given stream id
+         * @param streamid stream id
+         * @return the expected header
+         */
+        private byte [] expectedHeader(int streamid){
+            return ByteBuffer.allocate(HEADER_SIZE).put(HEADERS_TYPE).put((byte)0x04).putInt(streamid).array();
+        }
+
+        /**
+         * compresses a map into a header block
+         * @param map the map of name and value pairs
+         * @return the header block
+         */
+        private byte [] compress(Map<String, String> map){
+            try {
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                for (Map.Entry<String, String> entry : map.entrySet()) {
+                    encoder.encodeHeader(out, entry.getKey().getBytes(StandardCharsets.US_ASCII), entry.getValue().getBytes(StandardCharsets.US_ASCII), false);
+                }
+                return out.toByteArray();
+            }catch(Exception e){}
+            return null;
+        }
+
+        /**
+         * concats two arrays
+         * @param first first array
+         * @param second second array
+         * @return first plus second
+         */
+        private byte [] mergeTwoArrays(byte [] first, byte [] second){
+            byte [] toReturn = new byte [first.length + second.length];
+            int count = 0;
+            for(int  i = 0; i < first.length; i++){
+                toReturn[count++] = first[i];
+            }
+            for(int  i = 0; i < second.length; i++){
+                toReturn[count++] = second[i];
+            }
+            return toReturn;
         }
     }
 }

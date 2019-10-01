@@ -26,9 +26,22 @@ public class Window_Update extends Message {
      */
     public Window_Update(int streamID, int increment)
                                                 throws BadAttributeException {
-        this.code = 0x8;
-        this.streamID = streamID;
+        setStreamID(streamID);
         setIncrement(increment);
+    }
+
+    /**
+     * Sets the stream ID in the frame. Stream ID validation depends on specific
+     * message type
+     * @param streamID new stream id value
+     * @throws BadAttributeException if input stream id is invalid
+     */
+    @Override
+    public final void setStreamID(int streamID) throws BadAttributeException {
+        if(streamID < 0){
+            throw new BadAttributeException("streamID cannot be 0", "streamID");
+        }
+        this.streamID = streamID;
     }
 
     /**
@@ -52,14 +65,18 @@ public class Window_Update extends Message {
         this.increment = increment;
     }
 
-    public static Message decode(int streamID, int flags, byte[] payload) throws BadAttributeException{
+    public static Message decode(ByteBuffer buffer) throws BadAttributeException {
+        byte flags = buffer.get();
+        int rAndStreamID = buffer.getInt();
+        int streamID = rAndStreamID & 0x7FFFFFFF;
+        int payloadLength = buffer.remaining();
+
         // Check for valid length frame
-        if(payload.length < 4){
+        if(payloadLength < 4){
             throw new BadAttributeException("Payload should be length 4",
                     "payload");
         }
 
-        ByteBuffer buffer = ByteBuffer.wrap(payload);
         // Get the payload and extract increment
         int rAndIncrement = buffer.getInt();
         int increment = rAndIncrement & 0x7FFFFFFF;
@@ -92,6 +109,11 @@ public class Window_Update extends Message {
         buffer.putInt(rAndIncrement);
 
         return buffer.array();
+    }
+
+    @Override
+    public byte getCode() {
+        return 0x8;
     }
 
     @Override

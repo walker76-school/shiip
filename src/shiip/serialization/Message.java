@@ -7,6 +7,7 @@
 package shiip.serialization;
 
 import com.twitter.hpack.Decoder;
+import com.twitter.hpack.Encoder;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;
@@ -15,10 +16,9 @@ import java.util.Objects;
  * Represents a SHiiP message
  * @author Andrew Walker
  */
-public class Message {
+public abstract class Message {
 
     protected int streamID;
-    protected byte code;
 
     /**
      * Deserializes message from given bytes
@@ -33,7 +33,7 @@ public class Message {
      */
     public static Message decode(byte[] msgBytes, Decoder decoder)
                                                 throws BadAttributeException {
-        Objects.requireNonNull(msgBytes);
+        Objects.requireNonNull(msgBytes, "msgBytes cannot be null");
 
         // Check for a valid length header
         if(msgBytes.length < Constants.HEADER_BYTES){
@@ -43,25 +43,12 @@ public class Message {
 
         // Get header and extract streamID
         byte type = buffer.get();
-        byte flags = buffer.get();
-        int rAndStreamID = buffer.getInt();
-        int streamID = rAndStreamID & 0x7FFFFFFF;
-        int payloadLength = msgBytes.length - Constants.HEADER_BYTES;
-        // Retrieve the remaining data
-        byte[] payload = new byte[payloadLength];
-        buffer.get(payload);
-
         switch(type){
-            case Constants.DATA_TYPE:
-                return Data.decode(streamID, flags, payload);
-            case Constants.HEADERS_TYPE:
-                return Headers.decode(decoder, streamID, flags, payload);
-            case Constants.SETTINGS_TYPE:
-                return Settings.decode(streamID, flags, payload);
-            case Constants.WINDOW_UPDATE_TYPE:
-                return Window_Update.decode(streamID, flags, payload);
-            default:
-                throw new BadAttributeException("Invalid type", "code");
+            case Constants.DATA_TYPE: return Data.decode(buffer);
+            case Constants.HEADERS_TYPE:  return Headers.decode(decoder, buffer);
+            case Constants.SETTINGS_TYPE: return Settings.decode(buffer);
+            case Constants.WINDOW_UPDATE_TYPE: return Window_Update.decode(buffer);
+            default: throw new BadAttributeException("Invalid type", "code");
         }
     }
 
@@ -73,23 +60,19 @@ public class Message {
      * @throws NullPointerException if encoder is null + needed
      * @return serialized message
      */
-    public byte[] encode(com.twitter.hpack.Encoder encoder){
-        return null;
-    }
+    public abstract byte[] encode(Encoder encoder);
 
     /**
      * Returns type code for message
      * @return type code
      */
-    public byte getCode(){
-        return this.code;
-    }
+    public abstract byte getCode();
 
     /**
      * Returns the stream ID
      * @return stream ID
      */
-    public int	getStreamID(){
+    public int getStreamID(){
         return this.streamID;
     }
 
@@ -102,7 +85,7 @@ public class Message {
     public void setStreamID(int streamID) throws BadAttributeException {
         this.streamID = streamID;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -110,14 +93,11 @@ public class Message {
 
         Message message = (Message) o;
 
-        if (streamID != message.streamID) return false;
-        return code == message.code;
+        return streamID == message.streamID;
     }
 
     @Override
     public int hashCode() {
-        int result = streamID;
-        result = 31 * result + (int) code;
-        return result;
+        return streamID;
     }
 }

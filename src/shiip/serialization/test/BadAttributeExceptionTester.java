@@ -1,5 +1,5 @@
 /*******************************************************
- * Author: Ian Laird, Andrew Walker
+ * Author: Ian Laird, Andrew walker
  * Assignment: Prog 1
  * Class: Data Comm
  *******************************************************/
@@ -11,13 +11,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import shiip.serialization.BadAttributeException;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 /**
- * Performs testing for the {@link shiip.serialization.BadAttributeException}.
+ * Performs testing for the {@link BadAttributeException}.
  *
  * @version 1.0
  * @author Ian Laird, Andrew Walker

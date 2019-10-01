@@ -16,16 +16,16 @@ import shiip.serialization.BadAttributeException;
 import shiip.serialization.Headers;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static shiip.serialization.test.TestingConstants.HEADERS_TYPE;
 
 /**
- * Performs testing for the {@link shiip.serialization.Headers}.
+ * Performs testing for the {@link Headers}.
  *
  * @version 1.0
  * @author Ian Laird, Andrew Walker
@@ -41,11 +41,12 @@ public class HeadersTester {
         /**
          * Tests constructor with invalid streamID
          */
-        @Test
+        @ParameterizedTest(name = "streamID = {0}")
+        @ValueSource(ints = {-10, -1, 0})
         @DisplayName("Invalid streamID")
-        public void testConstructorInvalidStreamID() {
+        public void testConstructorInvalidStreamID(int streamID) {
             BadAttributeException ex = assertThrows(BadAttributeException.class, () -> {
-                new Headers(0, false);
+                new Headers(streamID, false);
             });
             assertEquals(ex.getAttribute(), "streamID");
         }
@@ -55,7 +56,7 @@ public class HeadersTester {
          * @param streamID valid streamID
          */
         @ParameterizedTest(name = "streamID = {0}")
-        @ValueSource(ints = {-1, 1, 10, 20})
+        @ValueSource(ints = {1, 10, 20})
         @DisplayName("Valid streamID")
         public void testConstructorStreamID(int streamID){
             assertDoesNotThrow(() -> {
@@ -124,12 +125,13 @@ public class HeadersTester {
         /**
          * Tests that BadAttributeException is thrown on invalid streamID
          */
-        @Test
+        @ParameterizedTest(name = "streamID = {0}")
+        @ValueSource(ints = {-10, -1, 0})
         @DisplayName("Invalid")
-        public void testInvalidSetStreamID() {
+        public void testInvalidSetStreamID(int streamID) {
             BadAttributeException ex = assertThrows(BadAttributeException.class, () -> {
                 Headers headers = new Headers(1, false);
-                headers.setStreamID(0);
+                headers.setStreamID(streamID);
             });
             assertEquals(ex.getAttribute(), "streamID");
         }
@@ -139,7 +141,7 @@ public class HeadersTester {
          * @param streamID valid streamID
          */
         @ParameterizedTest(name = "streamID = {0}")
-        @ValueSource(ints = {-1, 1, 10, 20})
+        @ValueSource(ints = { 1, 10, 20})
         @DisplayName("Valid")
         public void testValidSetStreamID(int streamID){
             assertDoesNotThrow(() -> {
@@ -163,7 +165,7 @@ public class HeadersTester {
          * @throws BadAttributeException if invalid parameter
          */
         @ParameterizedTest(name = "streamID = {0}")
-        @ValueSource(ints = {-1, 10, 20})
+        @ValueSource(ints = { 10, 20})
         @DisplayName("Mismatched streamID")
         public void testEqualsInvalidStreamID(int streamID) throws BadAttributeException {
             Headers headers = new Headers(1, false);
@@ -189,7 +191,7 @@ public class HeadersTester {
          * @throws BadAttributeException if invalid parameter
          */
         @ParameterizedTest(name = "streamID = {0}")
-        @ValueSource(ints = {-1, 1, 10, 20})
+        @ValueSource(ints = { 1, 10, 20})
         @DisplayName("Matched streamID")
         public void testEqualsValidStreamID(int streamID) throws BadAttributeException {
             Headers headers = new Headers(streamID, false);
@@ -223,7 +225,7 @@ public class HeadersTester {
          * @throws BadAttributeException if invalid parameter
          */
         @ParameterizedTest(name = "streamID = {0}")
-        @ValueSource(ints = {-1, 1, 10, 20})
+        @ValueSource(ints = { 1, 10, 20})
         @DisplayName("Matched streamID")
         public void testHashcodeValidStreamID(int streamID) throws BadAttributeException {
             Headers headers = new Headers(streamID, false);
@@ -299,10 +301,10 @@ public class HeadersTester {
 
         @Override
         public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) throws Exception {
-            List<Integer> validStreamIDs = Arrays.asList(-1, 1, 20, 50);
+            List<Integer> validStreamIDs = Arrays.asList( 1, 20, 50);
             List<Boolean> validIsEnd = Arrays.asList(true, false);
             List<Map<String, String>> validOptions = Arrays.asList(
-                    new HashMap<>(),
+                    new TreeMap<>(),
                     Map.of("name1", "value1"),
                     Map.of("name1", "value1", "name2", "value2"),
                     Map.of("name1", "value1", "name2", "value2", "name3", "value3")
@@ -311,19 +313,20 @@ public class HeadersTester {
             return validStreamIDs
                     .stream()
                     .flatMap(streamID ->
-                        validIsEnd
-                        .stream()
-                        .flatMap(isEnd ->
-                            validOptions
-                            .stream()
-                            .map(options -> Arguments.of(streamID, isEnd, options, encode(streamID, isEnd, options)))
-                        )
+                            validIsEnd
+                                    .stream()
+                                    .flatMap(isEnd ->
+                                            validOptions
+                                                    .stream()
+                                                    .map(options -> Arguments.of(streamID, isEnd, options, encode(streamID, isEnd, new TreeMap<>(options))))
+                                    )
                     );
         }
 
         private String encode(int streamID, boolean isEnd, Map<String, String> options){
             StringBuilder builder = new StringBuilder();
-            builder.append(String.format("Headers: StreamID=%d isEnd=%b (",streamID, isEnd));
+            builder.append(String.format("Headers: StreamID=%d isEnd=%b",streamID, isEnd));
+            builder.append(" (");
             for(Map.Entry<String, String> entry : options.entrySet()){
                 builder.append(String.format("[%s=%s]", entry.getKey(), entry.getValue()));
             }
@@ -336,17 +339,17 @@ public class HeadersTester {
 
         @Override
         public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) throws Exception {
-            List<Integer> validStreamIDs = Arrays.asList(-1, 1, 20, 50);
+            List<Integer> validStreamIDs = Arrays.asList( 1, 20, 50);
             List<Boolean> validIsEnd = Arrays.asList(true, false);
 
             return validStreamIDs
                     .stream()
                     .flatMap(streamID ->
                             validIsEnd
-                            .stream()
-                            .map(isEnd ->
-                                Arguments.of(streamID, isEnd, encode(streamID, isEnd))
-                            )
+                                    .stream()
+                                    .map(isEnd ->
+                                            Arguments.of(streamID, isEnd, encode(streamID, isEnd))
+                                    )
                     );
         }
 
