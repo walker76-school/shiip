@@ -25,9 +25,13 @@ import java.util.*;
  *
  * @version 1.1
  */
-public class Headers extends Message {
+public final class Headers extends Message {
 
     private static final Charset CHARENC = StandardCharsets.US_ASCII;
+    private static final byte ERROR_FLAG_A = 0x8;
+    private static final byte ERROR_FLAG_B = 0x20;
+    private static final byte SET_BIT = 0x4;
+    private static final byte IS_END_BIT = 0x1;
 
     private boolean isEnd;
     private Map<String, String> headerValues;
@@ -44,38 +48,36 @@ public class Headers extends Message {
         this.headerValues = new TreeMap<>();
     }
 
-    public static Message decode(Decoder decoder, ByteBuffer buffer) throws BadAttributeException{
+    protected Headers(byte[] msgBytes, Decoder decoder) throws BadAttributeException {
+        Objects.requireNonNull(decoder, "Decoder cannot be null");
 
+        ByteBuffer buffer = ByteBuffer.wrap(msgBytes);
+        // Throw away type
+        buffer.get();
         byte flags = buffer.get();
         int rAndStreamID = buffer.getInt();
         int streamID = rAndStreamID & 0x7FFFFFFF;
         int payloadLength = buffer.remaining();
+
         // Retrieve the remaining data
         byte[] payload = new byte[payloadLength];
         buffer.get(payload);
 
-        // Check the correct streamID is set for Headers
-        if(streamID == 0x0){
-            throw new BadAttributeException("StreamID cannot be 0x0 for Headers",
-                    "streamID");
-        }
+        setStreamID(streamID);
 
         // Check for errors
-        if((flags & (byte) 0x8) == 0x8 || (flags & (byte) 0x20) == 0x20){
+        if((flags & ERROR_FLAG_A) != 0x0 || (flags & ERROR_FLAG_B) != 0x0){
             throw new BadAttributeException("Error bit is set", "flags");
         }
 
-        if((flags & (byte) 0x4) != 0x4){
+        if((flags & SET_BIT) == 0x0){
             throw new BadAttributeException("Bit is not set in flags", "flags");
         }
 
         // Retrieve isEnd from the flags
-        boolean isEnd = (flags & (byte)0x1) == 1;
-
-        Headers headers = new Headers(streamID, isEnd);
+        this.isEnd = (flags & IS_END_BIT) != 0;
 
         Map<String, String> headerValues = new TreeMap<>();
-
         ByteArrayInputStream in = new ByteArrayInputStream(payload);
         try {
             decoder.decode(in, (name, value, sensitive) -> {
@@ -86,11 +88,10 @@ public class Headers extends Message {
         }
         decoder.endHeaderBlock();
 
+        this.headerValues = new TreeMap<>();
         for(Map.Entry<String, String> entry : headerValues.entrySet()){
-            headers.addValue(entry.getKey(), entry.getValue());
+            addValue(entry.getKey(), entry.getValue());
         }
-
-        return headers;
     }
 
     @Override
@@ -102,7 +103,7 @@ public class Headers extends Message {
             try {
                 encoder.encodeHeader(out, entry.getKey().getBytes(), entry.getValue().getBytes(), false);
             } catch (IOException e) {
-                e.printStackTrace();
+                System.err.println(e.getMessage());;
             }
         }
         byte[] compressedHeaders = out.toByteArray();
@@ -139,7 +140,7 @@ public class Headers extends Message {
 
     @Override
     public byte getCode() {
-        return (byte)0x1;
+        return 0x1;
     }
 
     @Override
@@ -174,7 +175,7 @@ public class Headers extends Message {
      * @return the header value for the name
      */
     public String getValue(String name){
-        return this.headerValues.get(name);
+        return this.headerValues.getOrDefault(name, null);
     }
 
     /**
@@ -206,6 +207,11 @@ public class Headers extends Message {
     }
 
     private boolean isValidName(String name){
+
+        if(name == null){
+            return false;
+        }
+
         if(name.length() < 1){
             return false;
         }
@@ -225,6 +231,11 @@ public class Headers extends Message {
     }
 
     private boolean isValidValue(String value){
+
+        if(value == null){
+            return false;
+        }
+
         if(value.length() < 1){
             return false;
         }
@@ -236,10 +247,6 @@ public class Headers extends Message {
         }
 
         return true;
-    }
-
-    private static byte[] s2b(String v) {
-        return v.getBytes(CHARENC);
     }
 
     private static String b2s(byte[] b) {

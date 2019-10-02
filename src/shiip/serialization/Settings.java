@@ -14,7 +14,7 @@ import java.nio.ByteBuffer;
  * Settings message
  * @author Andrew Walker
  */
-public class Settings extends Message {
+public final class Settings extends Message {
 
     /**
      * Creates Settings message
@@ -22,6 +22,20 @@ public class Settings extends Message {
      */
     public Settings() throws BadAttributeException {
         setStreamID(0);
+    }
+
+    protected Settings(byte[] msgBytes) throws BadAttributeException {
+        ByteBuffer buffer = ByteBuffer.wrap(msgBytes);
+        // Throw away type and flags
+        buffer.getShort();
+        int rAndStreamID = buffer.getInt();
+        int streamID = rAndStreamID & 0x7FFFFFFF;
+        int payloadLength = buffer.remaining();
+        // Retrieve the remaining data
+        byte[] payload = new byte[payloadLength];
+        buffer.get(payload);
+
+        setStreamID(streamID);
     }
 
     /**
@@ -40,31 +54,12 @@ public class Settings extends Message {
      * @throws BadAttributeException if input stream id is invalid
      */
     @Override
-    public final void setStreamID(int streamID) throws BadAttributeException {
+    public void setStreamID(int streamID) throws BadAttributeException {
         if(streamID != 0){
             throw new BadAttributeException("StreamID for Settings must be 0",
                                             "streamID");
         }
         this.streamID = streamID;
-    }
-
-    public static Message decode(ByteBuffer buffer) throws BadAttributeException {
-
-        byte flags = buffer.get();
-        int rAndStreamID = buffer.getInt();
-        int streamID = rAndStreamID & 0x7FFFFFFF;
-        int payloadLength = buffer.remaining();
-        // Retrieve the remaining data
-        byte[] payload = new byte[payloadLength];
-        buffer.get(payload);
-
-        // Check the correct streamID is set for Settings
-        if(streamID != 0x0){
-            throw new BadAttributeException("StreamID must be 0x0 for Settings",
-                    "streamID");
-        }
-
-        return new Settings();
     }
 
     /**

@@ -15,10 +15,7 @@ import org.junit.jupiter.params.provider.*;
 import shiip.serialization.BadAttributeException;
 import shiip.serialization.Headers;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -249,19 +246,112 @@ public class HeadersTester {
     @Nested
     @DisplayName("getValue")
     class GetValue {
+        @Test
+        @DisplayName("Unknown value")
+        public void testUnknownValue(){
+            assertDoesNotThrow(() -> {
+                Headers h = new Headers(1, false);
+                assertNull(h.getValue("name1"));
+            });
+        }
 
+        @Test
+        @DisplayName("Unknown value")
+        public void testKnownValue(){
+            assertDoesNotThrow(() -> {
+                Headers h = new Headers(1, false);
+                h.addValue("name1", "value1");
+                assertNotNull(h.getValue("name1"));
+                assertEquals("value1", h.getValue("name1"));
+            });
+        }
     }
 
     @Nested
     @DisplayName("getNames")
     class GetNames {
+        @Test
+        @DisplayName("Empty names")
+        public void testEmptyNames(){
+            assertDoesNotThrow(() -> {
+                Headers h = new Headers(1, false);
+                assertEquals(new TreeSet<>(), h.getNames());
+            });
+        }
 
+        @Test
+        @DisplayName("Full names")
+        public void testFullNames(){
+            assertDoesNotThrow(() -> {
+                Headers h = new Headers(1, false);
+                h.addValue("name1", "value1");
+                h.addValue("name2", "value2");
+                h.addValue("name3", "value3");
+                SortedSet<String> expected = new TreeSet<>(Set.of(
+                        "name1", "name2", "name3"
+                ));
+                assertEquals(expected, h.getNames());
+            });
+        }
     }
 
     @Nested
     @DisplayName("addValue")
     class AddValue {
 
+        @ParameterizedTest(name = "Invalid characters name - name{0}")
+        @ValueSource(chars = {'(', ')', ',', '/', ';', '<', '=', '>', '?', '@', '[', '\\', ']', '{', '}'})
+        public void testInvalidCharacters(char invalidChar){
+            assertThrows(BadAttributeException.class, () -> {
+                Headers h = new Headers(1, false);
+                h.addValue("name" + invalidChar, "value");
+            });
+        }
+
+        @ParameterizedTest(name = "Invalid values - {0}")
+        @ValueSource(strings = {"", "\nvalue", "va\nlue", "value\n"})
+        public void testInvalidValues(String invalidVales){
+            assertThrows(BadAttributeException.class, () -> {
+                Headers h = new Headers(1, false);
+                h.addValue("name", invalidVales);
+            });
+        }
+
+        @ParameterizedTest(name = "Invalid names - {0}")
+        @ValueSource(strings = {"", "\nname", "na\nme", "name\n"})
+        public void testInvalidNames(String invalidNames){
+            assertThrows(BadAttributeException.class, () -> {
+                Headers h = new Headers(1, false);
+                h.addValue(invalidNames, "value");
+            });
+        }
+
+        @Test
+        @DisplayName("Valid name and value")
+        public void testValidName(){
+            assertDoesNotThrow(() -> {
+                Headers h = new Headers(1, false);
+                h.addValue("name", "value");
+            });
+        }
+
+        @Test
+        @DisplayName("Null name")
+        public void testNullName(){
+            assertThrows(BadAttributeException.class, () -> {
+                Headers h = new Headers(1, false);
+                h.addValue(null, "value");
+            });
+        }
+
+        @Test
+        @DisplayName("Null value")
+        public void testNullValue(){
+            assertThrows(BadAttributeException.class, () -> {
+                Headers h = new Headers(1, false);
+                h.addValue("name", null);
+            });
+        }
     }
 
     @Nested

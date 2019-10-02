@@ -15,6 +15,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static shiip.serialization.test.TestingConstants.DATA_TYPE;
+import static shiip.serialization.test.TestingConstants.MAXIMUM_PAYLOAD_SIZE;
 
 /**
  * Tests the Data class
@@ -138,6 +139,19 @@ public class DataTester {
             BadAttributeException ex = assertThrows(BadAttributeException.class, () -> {
                 Data data = new Data(1, false, new byte[]{});
                 data.setData(null);
+            });
+            assertEquals(ex.getAttribute(), "data");
+        }
+
+        /**
+         * Tests the BadAttributeException is thrown on overfull data
+         */
+        @Test
+        @DisplayName("Large")
+        public void testSetDataLargeData() {
+            BadAttributeException ex = assertThrows(BadAttributeException.class, () -> {
+                Data data = new Data(1, false, new byte[]{});
+                data.setData(new byte[MAXIMUM_PAYLOAD_SIZE + 1]);
             });
             assertEquals(ex.getAttribute(), "data");
         }

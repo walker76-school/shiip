@@ -15,7 +15,10 @@ import java.util.Arrays;
  * Data message
  * @author Andrew Walker
  */
-public class Data extends Message {
+public final class Data extends Message {
+
+    private static final byte ERROR_BIT = 0x8;
+    private static final byte IS_END_BIT = 0x1;
 
     private boolean isEnd;
     private byte[] data;
@@ -32,6 +35,32 @@ public class Data extends Message {
         setStreamID(streamID);
         this.isEnd = isEnd;
         setData(data);
+    }
+
+    protected Data(byte[] msgBytes) throws BadAttributeException {
+        ByteBuffer buffer = ByteBuffer.wrap(msgBytes);
+
+        // Throw away type
+        buffer.get();
+
+        byte flags = buffer.get();
+        int rAndStreamID = buffer.getInt();
+        int streamID = rAndStreamID & 0x7FFFFFFF;
+        setStreamID(streamID);
+
+        // Retrieve the remaining data
+        int payloadLength = buffer.remaining();
+        byte[] payload = new byte[payloadLength];
+        buffer.get(payload);
+        setData(payload);
+
+        // Check for errors
+        if((flags & ERROR_BIT) != 0){
+            throw new BadAttributeException("Error bit is set", "flags");
+        }
+
+        // Retrieve isEnd from the flags
+        this.isEnd = (flags & IS_END_BIT) != 0;
     }
 
     /**
@@ -87,28 +116,6 @@ public class Data extends Message {
      */
     public void	setEnd(boolean end) {
         this.isEnd = end;
-    }
-
-    public static Message decode(ByteBuffer buffer) throws BadAttributeException {
-
-        byte flags = buffer.get();
-        int rAndStreamID = buffer.getInt();
-        int streamID = rAndStreamID & 0x7FFFFFFF;
-        int payloadLength = buffer.remaining();
-
-        // Retrieve the remaining data
-        byte[] payload = new byte[payloadLength];
-        buffer.get(payload);
-
-        // Check for errors
-        if((flags & (byte)0x8) == 8){
-            throw new BadAttributeException("Error bit is set", "flags");
-        }
-
-        // Retrieve isEnd from the flags
-        boolean isEnd = (flags & (byte)0x1) == 1;
-
-        return new Data(streamID, isEnd, payload);
     }
 
     /**

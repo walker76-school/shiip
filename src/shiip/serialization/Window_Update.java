@@ -14,7 +14,9 @@ import java.nio.ByteBuffer;
  * Window_Update frame
  * @author Andrew Walker
  */
-public class Window_Update extends Message {
+public final class Window_Update extends Message {
+
+    private static final int PAYLOAD_LENGTH = 4;
 
     private int increment;
 
@@ -30,6 +32,30 @@ public class Window_Update extends Message {
         setIncrement(increment);
     }
 
+    protected Window_Update(byte[] msgBytes) throws BadAttributeException {
+        ByteBuffer buffer = ByteBuffer.wrap(msgBytes);
+
+        // Throw away type and flags
+        buffer.getShort();
+
+        int rAndStreamID = buffer.getInt();
+        int streamID = rAndStreamID & 0x7FFFFFFF;
+        setStreamID(streamID);
+
+        int payloadLength = buffer.remaining();
+
+        // Check for valid length frame
+        if(payloadLength < PAYLOAD_LENGTH){
+            throw new BadAttributeException("Payload should be length 4",
+                    "payload");
+        }
+
+        // Get the payload and extract increment
+        int rAndIncrement = buffer.getInt();
+        int increment = rAndIncrement & 0x7FFFFFFF;
+        setIncrement(increment);
+    }
+
     /**
      * Sets the stream ID in the frame. Stream ID validation depends on specific
      * message type
@@ -37,7 +63,7 @@ public class Window_Update extends Message {
      * @throws BadAttributeException if input stream id is invalid
      */
     @Override
-    public final void setStreamID(int streamID) throws BadAttributeException {
+    public void setStreamID(int streamID) throws BadAttributeException {
         if(streamID < 0){
             throw new BadAttributeException("streamID cannot be 0", "streamID");
         }
@@ -57,31 +83,12 @@ public class Window_Update extends Message {
      * @param increment increment value
      * @throws BadAttributeException if invalid
      */
-    public final void setIncrement(int increment) throws BadAttributeException {
+    public void setIncrement(int increment) throws BadAttributeException {
         if(increment <= 0){
             throw new BadAttributeException("Increment cannot be negative",
                                             "increment");
         }
         this.increment = increment;
-    }
-
-    public static Message decode(ByteBuffer buffer) throws BadAttributeException {
-        byte flags = buffer.get();
-        int rAndStreamID = buffer.getInt();
-        int streamID = rAndStreamID & 0x7FFFFFFF;
-        int payloadLength = buffer.remaining();
-
-        // Check for valid length frame
-        if(payloadLength < 4){
-            throw new BadAttributeException("Payload should be length 4",
-                    "payload");
-        }
-
-        // Get the payload and extract increment
-        int rAndIncrement = buffer.getInt();
-        int increment = rAndIncrement & 0x7FFFFFFF;
-
-        return new Window_Update(streamID, increment);
     }
 
     /**

@@ -41,14 +41,14 @@ public abstract class Message {
         }
         ByteBuffer buffer = ByteBuffer.wrap(msgBytes);
 
-        // Get header and extract streamID
+        // Get type and pass of decoding
         byte type = buffer.get();
         switch(type){
-            case Constants.DATA_TYPE: return Data.decode(buffer);
-            case Constants.HEADERS_TYPE:  return Headers.decode(decoder, buffer);
-            case Constants.SETTINGS_TYPE: return Settings.decode(buffer);
-            case Constants.WINDOW_UPDATE_TYPE: return Window_Update.decode(buffer);
-            default: throw new BadAttributeException("Invalid type", "code");
+            case Constants.DATA_TYPE: return new Data(msgBytes);
+            case Constants.HEADERS_TYPE:  return new Headers(msgBytes, decoder);
+            case Constants.SETTINGS_TYPE: return new Settings(msgBytes);
+            case Constants.WINDOW_UPDATE_TYPE: return new Window_Update(msgBytes);
+            default: throw new BadAttributeException("Invalid type - " + type, "code");
         }
     }
 
