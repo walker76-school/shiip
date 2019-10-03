@@ -82,9 +82,7 @@ public abstract class Message {
      * @param streamID new stream id value
      * @throws BadAttributeException if input stream id is invalid
      */
-    public void setStreamID(int streamID) throws BadAttributeException {
-        this.streamID = streamID;
-    }
+    public abstract void setStreamID(int streamID) throws BadAttributeException;
 
     @Override
     public boolean equals(Object o) {

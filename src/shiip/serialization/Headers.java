@@ -107,7 +107,9 @@ public final class Headers extends Message {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         for(Map.Entry<String, String> entry : this.headerValues.entrySet()) {
             try {
-                encoder.encodeHeader(out, entry.getKey().getBytes(), entry.getValue().getBytes(), false);
+                encoder.encodeHeader(out, entry.getKey().getBytes(),
+                                            entry.getValue().getBytes(),
+                                        false);
             } catch (IOException e) {
                 System.err.println(e.getMessage());;
             }
@@ -166,7 +168,8 @@ public final class Headers extends Message {
      */
     public String toString(){
         StringBuilder builder = new StringBuilder();
-        builder.append(String.format("Headers: StreamID=%d isEnd=%b (", this.streamID, this.isEnd));
+        builder.append(String.format("Headers: StreamID=%d isEnd=%b (",
+                                                    this.streamID, this.isEnd));
 
         for(Map.Entry<String, String> entry : this.headerValues.entrySet()){
             builder.append(String.format("[%s=%s]", entry.getKey(), entry.getValue()));
@@ -222,7 +225,8 @@ public final class Headers extends Message {
             return false;
         }
 
-        List<Character> delims = Arrays.asList('(', ')', ',', '/', ';', '<', '=', '>', '?', '@', '[', '\\', ']', '{', '}');
+        List<Character> delims = Arrays.asList('(', ')', ',', '/', ';', '<',
+                                    '=', '>', '?', '@', '[', '\\', ']', '{', '}');
         for(char c : name.toCharArray()){
             if(delims.contains(c)){
                 return false;
