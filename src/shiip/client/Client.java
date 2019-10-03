@@ -23,46 +23,44 @@ public class Client {
     private static Encoder encoder;
     private static Decoder decoder;
 
-    public static void main(String[] args) throws Exception{
+    public static void main(String[] args) {
         if(args.length < 3){
             System.err.println("Usage: Client [host] [port] [paths...]");
             return;
         }
 
-        Map<Integer, FileOutputStream> ongoingDownloads;
         try {
             String host = args[0];
             int port = Integer.parseInt(args[1]);
             openConnection(host, port);
-            ongoingDownloads = startStreams(Arrays.copyOfRange(args, 2, args.length), host);
-        } catch (BadAttributeException e){
-            System.err.println(e.getMessage());
+            Map<Integer, FileOutputStream> ongoingDownloads =
+                    startStreams(Arrays.copyOfRange(args, 2, args.length), host);
+
+            while(ongoingDownloads.size() > 0){
+
+                Message m = getMessage();
+                if(m != null){
+                    switch(m.getCode()){
+                        case Constants.DATA_TYPE: handleData(m, ongoingDownloads); break;
+                        case Constants.HEADERS_TYPE:  handleHeaders(m, ongoingDownloads); break;
+                        case Constants.SETTINGS_TYPE: handleSettings(m); break;
+                        case Constants.WINDOW_UPDATE_TYPE: handleWindowUpdate(m); break;
+                    }
+                }
+            }
+
             closeConnection();
-            return;
+
         } catch (NumberFormatException e){
             System.err.println("Usage: Client [host] [port] [paths...]");
-            return;
         } catch (Exception e){
             System.err.println(e.getMessage());
-            return;
-        }
-
-        while(ongoingDownloads.size() > 0){
-
-            Message m = getMessage();
-            if(m == null){
-                continue;
-            }
-
-            switch(m.getCode()){
-                case Constants.DATA_TYPE: handleData(m, ongoingDownloads); break;
-                case Constants.HEADERS_TYPE:  handleHeaders(m, ongoingDownloads); break;
-                case Constants.SETTINGS_TYPE: handleSettings(m); break;
-                case Constants.WINDOW_UPDATE_TYPE: handleWindowUpdate(m); break;
+            try {
+                closeConnection();
+            } catch (Exception ex){
+                System.err.println(ex.getMessage());
             }
         }
-
-        closeConnection();
     }
 
     private static void openConnection(String host, Integer port) throws Exception {
@@ -89,12 +87,12 @@ public class Client {
         }
     }
 
-    private static Map<Integer, FileOutputStream> startStreams(String[] paths, String host) throws Exception {
+    private static Map<Integer, FileOutputStream> startStreams(String[] paths, String host)
+                                                                throws Exception {
         Map<Integer, FileOutputStream> ongoingDownloads = new TreeMap<>();
         for(int i = 0; i < paths.length; i++){
             int streamID = 1 + i * 2;
             String path = paths[i];
-            Headers headers;
             Map<String, String> options = Map.of(
                     ":method", "GET",
                     ":path", path,
@@ -103,14 +101,16 @@ public class Client {
                     "user-agent", "Mozilla/5.0"
             );
 
-            headers = encodeHeaders(streamID, true, options);
+            Headers headers = encodeHeaders(streamID, true, options);
             framer.putFrame(headers.encode(encoder));
             ongoingDownloads.put(streamID, new FileOutputStream(path.replaceAll("/", "-")));
         }
         return ongoingDownloads;
     }
 
-    private static Headers encodeHeaders(int streamID, boolean isEnd, Map<String, String> options) throws BadAttributeException {
+    private static Headers encodeHeaders(int streamID, boolean isEnd,
+                                         Map<String, String> options)
+                                                throws BadAttributeException {
         // Create request header for default page
         Headers headers = new Headers(streamID, isEnd);
         for(Map.Entry<String, String> entry : options.entrySet()){
@@ -154,10 +154,11 @@ public class Client {
 
         } catch (IOException | BadAttributeException e){
             System.err.println(e.getMessage());
+            System.exit(-1);
         }
     }
 
-    private static void handleHeaders(Message m, Map<Integer, FileOutputStream> ongoingDownloads){
+    private static void handleHeaders(Message m, Map<Integer, FileOutputStream> ongoingDownloads) {
         Headers h = (Headers) m;
 
         if(!ongoingDownloads.containsKey(h.getStreamID())){
@@ -165,21 +166,18 @@ public class Client {
             return;
         }
 
-        if(h.getNames().contains(":status")) {
-            System.out.println("Received message: " + m.toString());
-
-            if(!h.getValue(":status").startsWith("200")){
-                System.err.println("Bad status: " + h.getValue(":status"));
-                ongoingDownloads.remove(h.getStreamID());
-            }
+        System.out.println("Received message: " + m.toString());
+        if(!h.getNames().contains(":status") || !h.getValue(":status").startsWith("200")) {
+            System.err.println("Bad status: " + h.getValue(":status"));
+            ongoingDownloads.remove(h.getStreamID());
         }
     }
 
-    private static void handleSettings(Message m){
+    private static void handleSettings(Message m) {
         System.out.println("Received message: " + m.toString());
     }
 
-    private static void handleWindowUpdate(Message m){
+    private static void handleWindowUpdate(Message m) {
         System.out.println("Received message: " + m.toString());
     }
 }
