@@ -215,6 +215,11 @@ public final class Headers extends Message {
         this.headerValues.put(name, value);
     }
 
+    /**
+     * Tests if a string is a valid HTTP name
+     * @param name the name to test
+     * @return if a string is a valid HTTP name
+     */
     private boolean isValidName(String name){
 
         if(name == null){
@@ -240,6 +245,11 @@ public final class Headers extends Message {
         return true;
     }
 
+    /**
+     * Tests if a string is a valid HTTP value
+     * @param value the value to test
+     * @return if a string is a valid HTTP value
+     */
     private boolean isValidValue(String value){
 
         if(value == null){
@@ -259,6 +269,11 @@ public final class Headers extends Message {
         return true;
     }
 
+    /**
+     * Turns a byte array to a string
+     * @param b the byte array to convert
+     * @return a string from a byte array
+     */
     private static String b2s(byte[] b) {
         return new String(b, CHARENC);
     }
