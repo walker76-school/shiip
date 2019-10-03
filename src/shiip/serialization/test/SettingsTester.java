@@ -100,11 +100,10 @@ public class SettingsTester {
         @DisplayName("Invalid")
         public void testToStringSetter(int streamID) {
 
-            BadAttributeException ex = assertThrows(BadAttributeException.class, () -> {
+           assertThrows(BadAttributeException.class, () -> {
                 Settings settings = new Settings();
                 settings.setStreamID(streamID);
             });
-            assertEquals(ex.getAttribute(), "streamID");
         }
     }
 

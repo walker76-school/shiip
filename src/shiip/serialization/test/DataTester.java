@@ -36,10 +36,9 @@ public class DataTester {
         @ValueSource(ints = {-10, -1, 0})
         @DisplayName("Invalid streamID")
         public void testConstructorInvalidStreamID(int streamID) {
-            BadAttributeException ex = assertThrows(BadAttributeException.class, () -> {
+            assertThrows(BadAttributeException.class, () -> {
                 new Data(streamID, false, new byte[]{});
             });
-            assertEquals(ex.getAttribute(), "streamID");
         }
 
         /**
@@ -48,10 +47,9 @@ public class DataTester {
         @Test
         @DisplayName("Invalid data")
         public void testConstructorInvalidData() {
-            BadAttributeException ex = assertThrows(BadAttributeException.class, () -> {
+            assertThrows(BadAttributeException.class, () -> {
                 new Data(1, false, null);
             });
-            assertEquals(ex.getAttribute(), "data");
         }
 
         /**
@@ -136,11 +134,10 @@ public class DataTester {
         @Test
         @DisplayName("null")
         public void testSetDataInvalidData() {
-            BadAttributeException ex = assertThrows(BadAttributeException.class, () -> {
+            assertThrows(BadAttributeException.class, () -> {
                 Data data = new Data(1, false, new byte[]{});
                 data.setData(null);
             });
-            assertEquals(ex.getAttribute(), "data");
         }
 
         /**
@@ -149,11 +146,10 @@ public class DataTester {
         @Test
         @DisplayName("Large")
         public void testSetDataLargeData() {
-            BadAttributeException ex = assertThrows(BadAttributeException.class, () -> {
+            assertThrows(BadAttributeException.class, () -> {
                 Data data = new Data(1, false, new byte[]{});
                 data.setData(new byte[MAXIMUM_PAYLOAD_SIZE + 1]);
             });
-            assertEquals(ex.getAttribute(), "data");
         }
 
         /**
@@ -224,11 +220,10 @@ public class DataTester {
         @ValueSource(ints = {-10, -1, 0})
         @DisplayName("Invalid")
         public void testConstructorInvalidData(int streamID) {
-            BadAttributeException ex = assertThrows(BadAttributeException.class, () -> {
+            assertThrows(BadAttributeException.class, () -> {
                 Data data = new Data(1, false, new byte[]{});
                 data.setStreamID(streamID);
             });
-            assertEquals(ex.getAttribute(), "streamID");
         }
 
         /**

@@ -42,10 +42,9 @@ public class HeadersTester {
         @ValueSource(ints = {-10, -1, 0})
         @DisplayName("Invalid streamID")
         public void testConstructorInvalidStreamID(int streamID) {
-            BadAttributeException ex = assertThrows(BadAttributeException.class, () -> {
+            assertThrows(BadAttributeException.class, () -> {
                 new Headers(streamID, false);
             });
-            assertEquals(ex.getAttribute(), "streamID");
         }
 
         /**
@@ -78,13 +77,11 @@ public class HeadersTester {
 
         @DisplayName("No headers block")
         public void testNoHeadersBlock(){
-            try{
+            assertDoesNotThrow(() -> {
                 Headers h = new Headers(1, false);
                 assertNotNull(h.getNames());
                 assertEquals(h.getNames().size(), 0);
-            }catch(BadAttributeException e){
-                fail(e.getMessage());
-            }
+            });
         }
 
         /**
@@ -137,11 +134,10 @@ public class HeadersTester {
         @ValueSource(ints = {-10, -1, 0})
         @DisplayName("Invalid")
         public void testInvalidSetStreamID(int streamID) {
-            BadAttributeException ex = assertThrows(BadAttributeException.class, () -> {
+            assertThrows(BadAttributeException.class, () -> {
                 Headers headers = new Headers(1, false);
                 headers.setStreamID(streamID);
             });
-            assertEquals(ex.getAttribute(), "streamID");
         }
 
         /**

@@ -37,6 +37,11 @@ public final class Data extends Message {
         setData(data);
     }
 
+    /**
+     * Creates Data message from given byte array
+     * @param msgBytes encoded Data
+     * @throws BadAttributeException if attribute invalid (set protocol spec)
+     */
     protected Data(byte[] msgBytes) throws BadAttributeException {
         ByteBuffer buffer = ByteBuffer.wrap(msgBytes);
 

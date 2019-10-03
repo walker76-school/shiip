@@ -48,6 +48,12 @@ public final class Headers extends Message {
         this.headerValues = new TreeMap<>();
     }
 
+    /**
+     * Creates Headers message from a byte array
+     * @param msgBytes the encoded Headers
+     * @param decoder the deocder for the Headers headers
+     * @throws BadAttributeException  if attribute invalid (see protocol spec)
+     */
     protected Headers(byte[] msgBytes, Decoder decoder) throws BadAttributeException {
         Objects.requireNonNull(decoder, "Decoder cannot be null");
 

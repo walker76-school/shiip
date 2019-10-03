@@ -149,11 +149,10 @@ public class Window_UpdateTester {
         @ValueSource(ints = {-10, -1})
         @DisplayName("Invalid")
         public void testInvalidSetStreamID(int streamID) {
-            BadAttributeException ex = assertThrows(BadAttributeException.class, () -> {
+            assertThrows(BadAttributeException.class, () -> {
                 Window_Update wu = new Window_Update(1, 1);
                 wu.setStreamID(streamID);
             });
-            assertEquals(ex.getAttribute(), "streamID");
         }
 
         /**

@@ -36,8 +36,7 @@ public class BadAttributeException extends Exception implements Serializable {
      * @param attribute attribute related to problem
      */
     public BadAttributeException(String message, String attribute){
-        super(message);
-        this.attribute = attribute;
+        this(message, attribute, null);
     }
 
     /**

@@ -32,6 +32,11 @@ public final class Window_Update extends Message {
         setIncrement(increment);
     }
 
+    /**
+     * Creates Window_Update message from byte array
+     * @param msgBytes encoded Window_Update
+     * @throws BadAttributeException if attribute invalid (set protocol spec)
+     */
     protected Window_Update(byte[] msgBytes) throws BadAttributeException {
         ByteBuffer buffer = ByteBuffer.wrap(msgBytes);
 

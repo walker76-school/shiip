@@ -24,6 +24,11 @@ public final class Settings extends Message {
         setStreamID(0);
     }
 
+    /**
+     * Creates Settings message from byte array
+     * @param msgBytes encoded Settings
+     * @throws BadAttributeException if attribute invalid (not thrown in this case)
+     */
     protected Settings(byte[] msgBytes) throws BadAttributeException {
         ByteBuffer buffer = ByteBuffer.wrap(msgBytes);
         // Throw away type and flags
