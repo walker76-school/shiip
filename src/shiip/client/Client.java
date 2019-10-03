@@ -1,3 +1,9 @@
+/*******************************************************
+ * Author: Andrew walker
+ * Assignment: Prog 2
+ * Class: Data Comm
+ *******************************************************/
+
 package shiip.client;
 
 import com.twitter.hpack.Decoder;
@@ -11,6 +17,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+/**
+ * A TCP client for SHiiP frames
+ */
 public class Client {
 
     private static final Charset ENC = StandardCharsets.US_ASCII;
@@ -63,6 +72,12 @@ public class Client {
         }
     }
 
+    /**
+     * Opens a socket connection and establishes necessary tools for communication
+     * @param host the host to connect to
+     * @param port the port to connect on
+     * @throws Exception if issue opening socket or establishing tools (see spec)
+     */
     private static void openConnection(String host, Integer port) throws Exception {
 
         socket = TLSFactory.getClientSocket(host, port);
@@ -81,12 +96,23 @@ public class Client {
         framer.putFrame(new Settings().encode(null));
     }
 
+    /**
+     * Closes the socket connection
+     * @throws Exception if error closing socket
+     */
     private static void closeConnection() throws Exception {
         if(socket != null){
             socket.close();
         }
     }
 
+    /**
+     * Establishes streams for every filepath
+     * @param paths a list of files to download from the server
+     * @param host the host to download from
+     * @return a map of streamIDs to local FileOutputStreams
+     * @throws Exception if issue encoding Headers
+     */
     private static Map<Integer, FileOutputStream> startStreams(String[] paths, String host)
                                                                 throws Exception {
         Map<Integer, FileOutputStream> ongoingDownloads = new TreeMap<>();
@@ -108,6 +134,14 @@ public class Client {
         return ongoingDownloads;
     }
 
+    /**
+     * Encodes a Headers object
+     * @param streamID the streamID of the Headers
+     * @param isEnd if the header is the last one
+     * @param options a map of HTTP header options
+     * @return a headers object
+     * @throws BadAttributeException if invalid streamID or option
+     */
     private static Headers encodeHeaders(int streamID, boolean isEnd,
                                          Map<String, String> options)
                                                 throws BadAttributeException {
@@ -119,6 +153,10 @@ public class Client {
         return headers;
     }
 
+    /**
+     * Retrieves the next message from the server
+     * @return the next message from the server
+     */
     private static Message getMessage(){
         try {
             byte[] framedBytes = deframer.getFrame();
@@ -132,6 +170,11 @@ public class Client {
         }
     }
 
+    /**
+     * Handler for a Data message
+     * @param m the Data message
+     * @param ongoingDownloads the map of streamID to local FileOutputStreams
+     */
     private static void handleData(Message m, Map<Integer, FileOutputStream> ongoingDownloads){
         Data d = (Data) m;
         if(!ongoingDownloads.containsKey(d.getStreamID())){
@@ -158,6 +201,11 @@ public class Client {
         }
     }
 
+    /**
+     * Handler for a Headers message
+     * @param m the Headers message
+     * @param ongoingDownloads  the map of streamID to local FileOutputStreams
+     */
     private static void handleHeaders(Message m, Map<Integer, FileOutputStream> ongoingDownloads) {
         Headers h = (Headers) m;
 
@@ -173,10 +221,18 @@ public class Client {
         }
     }
 
+    /**
+     * Handler for a Settings message
+     * @param m the Settings message
+     */
     private static void handleSettings(Message m) {
         System.out.println("Received message: " + m.toString());
     }
 
+    /**
+     * Handler for a Window_Update message
+     * @param m the Window_Update message
+     */
     private static void handleWindowUpdate(Message m) {
         System.out.println("Received message: " + m.toString());
     }
