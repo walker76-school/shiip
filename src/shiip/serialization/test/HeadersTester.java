@@ -76,6 +76,17 @@ public class HeadersTester {
             });
         }
 
+        @DisplayName("No headers block")
+        public void testNoHeadersBlock(){
+            try{
+                Headers h = new Headers(1, false);
+                assertNotNull(h.getNames());
+                assertEquals(h.getNames().size(), 0);
+            }catch(BadAttributeException e){
+                fail(e.getMessage());
+            }
+        }
+
         /**
          * Tests code is the correct one for Headers
          */
@@ -243,6 +254,9 @@ public class HeadersTester {
         }
     }
 
+    /**
+     * get Value
+     */
     @Nested
     @DisplayName("getValue")
     class GetValue {
@@ -267,6 +281,9 @@ public class HeadersTester {
         }
     }
 
+    /**
+     * get names
+     */
     @Nested
     @DisplayName("getNames")
     class GetNames {
@@ -389,6 +406,9 @@ public class HeadersTester {
 
     static class ToStringOptionsProvider implements ArgumentsProvider {
 
+        /**
+         * provides arguments
+         */
         @Override
         public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) throws Exception {
             List<Integer> validStreamIDs = Arrays.asList( 1, 20, 50);
@@ -413,6 +433,9 @@ public class HeadersTester {
                     );
         }
 
+        /**
+         * encodes the string
+         */
         private String encode(int streamID, boolean isEnd, Map<String, String> options){
             StringBuilder builder = new StringBuilder();
             builder.append(String.format("Headers: StreamID=%d isEnd=%b",streamID, isEnd));
