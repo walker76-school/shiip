@@ -101,7 +101,7 @@ public class Client {
                     "user-agent", "Mozilla/5.0"
             );
 
-            Headers headers = encodeHeaders(streamID, true, options);
+            Headers headers = encodeHeaders(streamID, i == paths.length - 1, options);
             framer.putFrame(headers.encode(encoder));
             ongoingDownloads.put(streamID, new FileOutputStream(path.replaceAll("/", "-")));
         }
