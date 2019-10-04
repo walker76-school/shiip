@@ -25,6 +25,7 @@ public class Client {
     private static final Charset ENC = StandardCharsets.US_ASCII;
     private static final int MAX_TABLE_SIZE = 4096;
     private static final String HANDSHAKE_MESSAGE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
+    private static final String VALID_STATUS = "200";
     private static final int HOST_NDX = 0;
     private static final int PORT_NDX = 1;
     private static final int PATHS_NDX = 2;
@@ -180,7 +181,7 @@ public class Client {
         }
 
         System.out.println("Received message: " + m.toString());
-        if(!h.getNames().contains(":status") || !h.getValue(":status").startsWith("200")) {
+        if(!h.getNames().contains(":status") || !h.getValue(":status").startsWith(VALID_STATUS)) {
             System.err.println("Bad status: " + h.getValue(":status"));
             ongoingDownloads.remove(h.getStreamID());
         }
