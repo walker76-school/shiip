@@ -25,9 +25,11 @@ public class Client {
     private static final Charset ENC = StandardCharsets.US_ASCII;
     private static final int MAX_TABLE_SIZE = 4096;
     private static final String HANDSHAKE_MESSAGE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
+    private static final int HOST_NDX = 0;
+    private static final int PORT_NDX = 1;
+    private static final int PATHS_NDX = 2;
 
     private static Framer framer;
-    private static Decoder decoder;
 
     public static void main(String[] args) {
         if(args.length < 3){
@@ -35,18 +37,18 @@ public class Client {
             return;
         }
 
-        // Set up De/Encoder
-        decoder = new Decoder(MAX_TABLE_SIZE, MAX_TABLE_SIZE);
+        Decoder decoder = new Decoder(MAX_TABLE_SIZE, MAX_TABLE_SIZE);
 
-        try (Socket socket = TLSFactory.getClientSocket(args[0], Integer.parseInt(args[1]))) {
+        String host = args[HOST_NDX];
+        try (Socket socket = TLSFactory.getClientSocket(host, Integer.parseInt(args[PORT_NDX]))) {
 
             Deframer deframer = openConnection(socket);
             Map<Integer, FileOutputStream> ongoingDownloads = new TreeMap<>();
-            startStreams(Arrays.copyOfRange(args, 2, args.length), args[0], ongoingDownloads);
+            startStreams(Arrays.copyOfRange(args, PATHS_NDX, args.length), host, ongoingDownloads);
 
             while(ongoingDownloads.size() > 0){
 
-                Message m = getMessage(deframer);
+                Message m = getMessage(deframer, decoder);
                 if(m != null){
                     switch(m.getCode()){
                         case Constants.DATA_TYPE: handleData(m, ongoingDownloads); break;
@@ -87,12 +89,13 @@ public class Client {
      * @param paths a list of files to download from the server
      * @param host the host to download from
      * @param ongoingDownloads collection of outputstreams for each stream
-     * @return a map of streamIDs to local FileOutputStreams
      * @throws Exception if issue encoding Headers
      */
-    private static Map<Integer, FileOutputStream> startStreams(String[] paths, String host,
-                                               Map<Integer, FileOutputStream> ongoingDownloads)
-                                                throws Exception {
+    private static void startStreams(String[] paths,
+                                     String host,
+                                     Map<Integer, FileOutputStream> ongoingDownloads)
+                                     throws Exception {
+
         Encoder encoder = new Encoder(MAX_TABLE_SIZE);
         for(int i = 0; i < paths.length; i++){
             int streamID = 1 + i * 2;
@@ -105,37 +108,21 @@ public class Client {
                     "user-agent", "Mozilla/5.0"
             );
 
-            Headers headers = encodeHeaders(streamID, i == paths.length - 1, options);
+            // Create request header for default page
+            Headers headers = new Headers(streamID, i == paths.length - 1);
+            for(Map.Entry<String, String> entry : options.entrySet()){
+                headers.addValue(entry.getKey(), entry.getValue());
+            }
             framer.putFrame(headers.encode(encoder));
             ongoingDownloads.put(streamID, new FileOutputStream(path.replaceAll("/", "-")));
         }
-        return ongoingDownloads;
-    }
-
-    /**
-     * Encodes a Headers object
-     * @param streamID the streamID of the Headers
-     * @param isEnd if the header is the last one
-     * @param options a map of HTTP header options
-     * @return a headers object
-     * @throws BadAttributeException if invalid streamID or option
-     */
-    private static Headers encodeHeaders(int streamID, boolean isEnd,
-                                         Map<String, String> options)
-                                                throws BadAttributeException {
-        // Create request header for default page
-        Headers headers = new Headers(streamID, isEnd);
-        for(Map.Entry<String, String> entry : options.entrySet()){
-            headers.addValue(entry.getKey(), entry.getValue());
-        }
-        return headers;
     }
 
     /**
      * Retrieves the next message from the server
      * @return the next message from the server
      */
-    private static Message getMessage(Deframer deframer){
+    private static Message getMessage(Deframer deframer, Decoder decoder){
         try {
             byte[] framedBytes = deframer.getFrame();
             return Message.decode(framedBytes, decoder);
