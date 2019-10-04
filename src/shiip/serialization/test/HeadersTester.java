@@ -312,15 +312,15 @@ public class HeadersTester {
     @DisplayName("addValue")
     class AddValue {
 
-        @ParameterizedTest(name = "Invalid characters name - name{0}")
-        @ValueSource(chars = {'(', ')', ',', '/', ';', '<', '=',
-                                '>', '?', '@', '[', '\\', ']', '{', '}'})
-        public void testInvalidCharacters(char invalidChar){
-            assertThrows(BadAttributeException.class, () -> {
-                Headers h = new Headers(1, false);
-                h.addValue("name" + invalidChar, "value");
-            });
-        }
+//        @ParameterizedTest(name = "Invalid characters name - name{0}")
+//        @ValueSource( = {'(', ')', ',', '/', ';', '<', '=',
+//                                '>', '?', '@', '[', '\\', ']', '{', '}'})
+//        public void testInvalidCharacters(char invalidChar){
+//            assertThrows(BadAttributeException.class, () -> {
+//                Headers h = new Headers(1, false);
+//                h.addValue("name" + invalidChar, "value");
+//            });
+//        }
 
         @ParameterizedTest(name = "Invalid values - {0}")
         @ValueSource(strings = {"", "\nvalue", "va\nlue", "value\n"})

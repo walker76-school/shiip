@@ -26,10 +26,7 @@ public class Client {
     private static final int MAX_TABLE_SIZE = 4096;
     private static final String HANDSHAKE_MESSAGE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
 
-    private static Socket socket;
     private static Framer framer;
-    private static Deframer deframer;
-    private static Encoder encoder;
     private static Decoder decoder;
 
     public static void main(String[] args) {
@@ -38,16 +35,18 @@ public class Client {
             return;
         }
 
-        try {
-            String host = args[0];
-            int port = Integer.parseInt(args[1]);
-            openConnection(host, port);
-            Map<Integer, FileOutputStream> ongoingDownloads =
-                    startStreams(Arrays.copyOfRange(args, 2, args.length), host);
+        // Set up De/Encoder
+        decoder = new Decoder(MAX_TABLE_SIZE, MAX_TABLE_SIZE);
+
+        try (Socket socket = TLSFactory.getClientSocket(args[0], Integer.parseInt(args[1]))) {
+
+            Deframer deframer = openConnection(socket);
+            Map<Integer, FileOutputStream> ongoingDownloads = new TreeMap<>();
+            startStreams(Arrays.copyOfRange(args, 2, args.length), args[0], ongoingDownloads);
 
             while(ongoingDownloads.size() > 0){
 
-                Message m = getMessage();
+                Message m = getMessage(deframer);
                 if(m != null){
                     switch(m.getCode()){
                         case Constants.DATA_TYPE: handleData(m, ongoingDownloads); break;
@@ -58,64 +57,43 @@ public class Client {
                 }
             }
 
-            closeConnection();
-
         } catch (NumberFormatException e){
             System.err.println("Usage: Client [host] [port] [paths...]");
-        } catch (Exception e){
+        } catch(Exception e){
             System.err.println(e.getMessage());
-            try {
-                closeConnection();
-            } catch (Exception ex){
-                System.err.println(ex.getMessage());
-            }
         }
     }
 
     /**
      * Opens a socket connection and establishes necessary tools for communication
-     * @param host the host to connect to
-     * @param port the port to connect on
+     * @param socket the socket to setup connection with
      * @throws Exception if issue opening socket or establishing tools (see spec)
      */
-    private static void openConnection(String host, Integer port) throws Exception {
+    private static Deframer openConnection(Socket socket) throws Exception {
 
-        socket = TLSFactory.getClientSocket(host, port);
-        InputStream in = socket.getInputStream();
         OutputStream out = socket.getOutputStream();
 
-        deframer = new Deframer(in);
+        Deframer deframer = new Deframer(socket.getInputStream());
         framer = new Framer(out);
-
-        // Set up De/Encoder
-        decoder = new Decoder(MAX_TABLE_SIZE, MAX_TABLE_SIZE);
-        encoder = new Encoder(MAX_TABLE_SIZE);
 
         // Send connection preface and Settings frame
         out.write(HANDSHAKE_MESSAGE.getBytes(ENC));
         framer.putFrame(new Settings().encode(null));
-    }
-
-    /**
-     * Closes the socket connection
-     * @throws Exception if error closing socket
-     */
-    private static void closeConnection() throws Exception {
-        if(socket != null){
-            socket.close();
-        }
+        return deframer;
     }
 
     /**
      * Establishes streams for every filepath
      * @param paths a list of files to download from the server
      * @param host the host to download from
+     * @param ongoingDownloads collection of outputstreams for each stream
      * @return a map of streamIDs to local FileOutputStreams
      * @throws Exception if issue encoding Headers
      */
-    private static Map<Integer, FileOutputStream> startStreams(String[] paths, String host)
-                                                                throws Exception {
-        Map<Integer, FileOutputStream> ongoingDownloads = new TreeMap<>();
+    private static Map<Integer, FileOutputStream> startStreams(String[] paths, String host,
+                                               Map<Integer, FileOutputStream> ongoingDownloads)
+                                                throws Exception {
+        Encoder encoder = new Encoder(MAX_TABLE_SIZE);
         for(int i = 0; i < paths.length; i++){
             int streamID = 1 + i * 2;
             String path = paths[i];
@@ -157,7 +135,7 @@ public class Client {
      * Retrieves the next message from the server
      * @return the next message from the server
      */
-    private static Message getMessage(){
+    private static Message getMessage(Deframer deframer){
         try {
             byte[] framedBytes = deframer.getFrame();
             return Message.decode(framedBytes, decoder);
@@ -183,8 +161,8 @@ public class Client {
         }
         System.out.println("Received message: " + m);
         try {
-            Window_Update wu = new Window_Update(d.getStreamID(), d.getData().length);
-            framer.putFrame(wu.encode(null));
+            framer.putFrame(new Window_Update(0, d.getData().length).encode(null));
+            framer.putFrame(new Window_Update(d.getStreamID(), d.getData().length).encode(null));
 
             // Write data
             ongoingDownloads.get(d.getStreamID()).write(d.getData());
