@@ -16,6 +16,8 @@ import java.nio.ByteBuffer;
  */
 public final class Settings extends Message {
 
+    private static final byte FLAGS = 0x1;
+
     /**
      * Creates Settings message
      * @throws BadAttributeException if attribute invalid (not thrown in this case)
@@ -34,7 +36,7 @@ public final class Settings extends Message {
         // Throw away type and flags
         buffer.getShort();
         int rAndStreamID = buffer.getInt();
-        int streamID = rAndStreamID & 0x7FFFFFFF;
+        int streamID = rAndStreamID & Constants.STREAM_ID_MASK;
         int payloadLength = buffer.remaining();
         // Retrieve the remaining data
         byte[] payload = new byte[payloadLength];
@@ -78,18 +80,15 @@ public final class Settings extends Message {
     @Override
     public byte[] encode(Encoder encoder) {
         ByteBuffer buffer = ByteBuffer.allocate(Constants.HEADER_BYTES);
-        byte type = (byte)0x4;
-        byte flags = (byte)0x1;
-        buffer.put(type);
-        buffer.put(flags);
-        int rAndStreamID = this.streamID & 0x7FFFFFFF;
-        buffer.putInt(rAndStreamID);
+        buffer.put(Constants.SETTINGS_TYPE);
+        buffer.put(FLAGS);
+        buffer.putInt(this.streamID & Constants.STREAM_ID_MASK);
         return buffer.array();
     }
 
     @Override
     public byte getCode() {
-        return 0x4;
+        return Constants.SETTINGS_TYPE;
     }
 
     /**

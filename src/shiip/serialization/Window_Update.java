@@ -17,6 +17,7 @@ import java.nio.ByteBuffer;
 public final class Window_Update extends Message {
 
     private static final int PAYLOAD_LENGTH = 4;
+    private static final byte FLAGS = 0x0;
 
     private int increment;
 
@@ -44,20 +45,20 @@ public final class Window_Update extends Message {
         buffer.getShort();
 
         int rAndStreamID = buffer.getInt();
-        int streamID = rAndStreamID & 0x7FFFFFFF;
+        int streamID = rAndStreamID & Constants.STREAM_ID_MASK;
         setStreamID(streamID);
 
         int payloadLength = buffer.remaining();
 
         // Check for valid length frame
-        if(payloadLength < PAYLOAD_LENGTH){
+        if(payloadLength != PAYLOAD_LENGTH){
             throw new BadAttributeException("Payload should be length 4",
                     "payload");
         }
 
         // Get the payload and extract increment
         int rAndIncrement = buffer.getInt();
-        int increment = rAndIncrement & 0x7FFFFFFF;
+        int increment = rAndIncrement & Constants.STREAM_ID_MASK;
         setIncrement(increment);
     }
 
@@ -106,26 +107,17 @@ public final class Window_Update extends Message {
      */
     @Override
     public byte[] encode(Encoder encoder) {
-        ByteBuffer buffer = ByteBuffer.allocate(Constants.HEADER_BYTES + 4);
-
-        byte type = (byte)0x8;
-        buffer.put(type);
-
-        byte flags = (byte)0x0;
-        buffer.put(flags);
-
-        int rAndStreamID = this.streamID & 0x7FFFFFFF;
-        buffer.putInt(rAndStreamID);
-
-        int rAndIncrement = this.increment & 0x7FFFFFFF;
-        buffer.putInt(rAndIncrement);
-
+        ByteBuffer buffer = ByteBuffer.allocate(Constants.HEADER_BYTES + PAYLOAD_LENGTH);
+        buffer.put(Constants.WINDOW_UPDATE_TYPE);
+        buffer.put(FLAGS);
+        buffer.putInt(this.streamID & Constants.STREAM_ID_MASK);
+        buffer.putInt(this.increment & Constants.STREAM_ID_MASK);
         return buffer.array();
     }
 
     @Override
     public byte getCode() {
-        return 0x8;
+        return Constants.WINDOW_UPDATE_TYPE;
     }
 
     @Override
@@ -142,7 +134,7 @@ public final class Window_Update extends Message {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + increment;
+        result =  Constants.HASH_PRIME * result + increment;
         return result;
     }
 

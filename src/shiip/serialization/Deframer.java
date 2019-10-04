@@ -53,11 +53,7 @@ public class Deframer {
         }
 
         // Convert bytes into length
-        int length = (lengthBuffer[0] & Constants.BYTEMASK)
-                        << Constants.BYTESHIFT * 2
-                        | (lengthBuffer[1] & Constants.BYTEMASK)
-                        << Constants.BYTESHIFT
-                        | (lengthBuffer[2] & Constants.BYTEMASK);
+        int length = decodeInteger(lengthBuffer);
 
         // Check for valid length
         if(length > Constants.MAXIMUM_PAYLOAD_LENGTH_BYTES){
@@ -77,5 +73,14 @@ public class Deframer {
         }
 
         return messageBuffer;
+    }
+
+    private int decodeInteger(byte[] bytes){
+        int ret = 0;
+        for(int i = 0; i < bytes.length; i++){
+            ret = ret | (bytes[i] & Constants.BYTEMASK)
+                    << (Constants.BYTESHIFT * (bytes.length - i - 1));
+        }
+        return ret;
     }
 }

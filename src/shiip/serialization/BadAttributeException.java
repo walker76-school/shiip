@@ -14,7 +14,6 @@ import java.io.Serializable;
  */
 public class BadAttributeException extends Exception implements Serializable {
 
-    private static final long serialVersionUID = 1L;
     private String attribute;
 
     /**
@@ -44,6 +43,6 @@ public class BadAttributeException extends Exception implements Serializable {
      * @return attribute name
      */
     public String getAttribute(){
-        return this.attribute;
+        return attribute;
     }
 }

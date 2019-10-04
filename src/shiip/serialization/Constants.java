@@ -6,6 +6,9 @@
 
 package shiip.serialization;
 
+import java.io.IOException;
+import java.io.OutputStream;
+
 /**
  * Holds constant values used for serialization and deserialization
  * by the Framer and Deframer
@@ -43,4 +46,10 @@ public class Constants {
 
     // Maximum sized payload for a frame
     public static final int MAX_DATA_SIZE = 16384;
+
+    // Mask to mask out stream ID
+    public static final int STREAM_ID_MASK = 0x7FFFFFFF;
+
+    // Prime number used for hashing
+    public static final int HASH_PRIME = 31;
 }

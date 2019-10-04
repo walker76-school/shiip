@@ -19,6 +19,8 @@ import java.util.Objects;
  */
 public class Framer {
 
+    private static final int ENCODE_CYCLES = 3;
+
     // OutputStream to print the frame to
     private OutputStream out;
 
@@ -60,14 +62,16 @@ public class Framer {
         }
 
         // Write out the length prefix
-        out.write((payloadLength >> Constants.BYTESHIFT * 2)
-                            & Constants.BYTEMASK);
-        out.write((payloadLength >> Constants.BYTESHIFT)
-                            & Constants.BYTEMASK);
-        out.write(payloadLength & Constants.BYTEMASK);
+       encodeInteger(payloadLength, out);
 
         // Write the message and flush
         out.write(message);
         out.flush();
+    }
+
+    private void encodeInteger(int toEncode, OutputStream out) throws IOException {
+        for(int i = 0; i < ENCODE_CYCLES; i++){
+            out.write((toEncode >> Constants.BYTESHIFT * (ENCODE_CYCLES - i - 1) & Constants.BYTEMASK));
+        }
     }
 }

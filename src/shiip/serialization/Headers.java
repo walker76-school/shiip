@@ -31,6 +31,7 @@ public final class Headers extends Message {
     private static final byte ERROR_FLAG_A = 0x8;
     private static final byte ERROR_FLAG_B = 0x20;
     private static final byte SET_BIT = 0x4;
+    private static final byte FLAGS = 0x4;
     private static final byte IS_END_BIT = 0x1;
 
     private boolean isEnd;
@@ -45,7 +46,7 @@ public final class Headers extends Message {
     public Headers(int streamID, boolean isEnd) throws BadAttributeException {
         setStreamID(streamID);
         this.isEnd = isEnd;
-        this.headerValues = new TreeMap<>();
+        headerValues = new TreeMap<>();
     }
 
     /**
@@ -61,15 +62,15 @@ public final class Headers extends Message {
         // Throw away type
         buffer.get();
         byte flags = buffer.get();
+
         int rAndStreamID = buffer.getInt();
-        int streamID = rAndStreamID & 0x7FFFFFFF;
-        int payloadLength = buffer.remaining();
+        int streamID = rAndStreamID & Constants.STREAM_ID_MASK;
+        setStreamID(streamID);
 
         // Retrieve the remaining data
+        int payloadLength = buffer.remaining();
         byte[] payload = new byte[payloadLength];
         buffer.get(payload);
-
-        setStreamID(streamID);
 
         // Check for errors
         if((flags & ERROR_FLAG_A) != 0x0 || (flags & ERROR_FLAG_B) != 0x0){
@@ -81,7 +82,7 @@ public final class Headers extends Message {
         }
 
         // Retrieve isEnd from the flags
-        this.isEnd = (flags & IS_END_BIT) != 0;
+        isEnd = (flags & IS_END_BIT) != 0;
 
         Map<String, String> headerValues = new TreeMap<>();
         ByteArrayInputStream in = new ByteArrayInputStream(payload);
@@ -105,7 +106,7 @@ public final class Headers extends Message {
         Objects.requireNonNull(encoder);
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        for(Map.Entry<String, String> entry : this.headerValues.entrySet()) {
+        for(Map.Entry<String, String> entry : headerValues.entrySet()) {
             try {
                 encoder.encodeHeader(out, entry.getKey().getBytes(),
                                             entry.getValue().getBytes(),
@@ -115,16 +116,11 @@ public final class Headers extends Message {
             }
         }
         byte[] compressedHeaders = out.toByteArray();
+
         ByteBuffer buffer = ByteBuffer.allocate(Constants.HEADER_BYTES + compressedHeaders.length);
-        byte type = (byte)0x1;
-        byte flags = (byte)0x4;
-        if(this.isEnd){
-            flags = (byte) (flags | 0x1);
-        }
-        buffer.put(type);
-        buffer.put(flags);
-        int rAndStreamID = this.streamID & 0x7FFFFFFF;
-        buffer.putInt(rAndStreamID);
+        buffer.put(Constants.HEADERS_TYPE);
+        buffer.put(isEnd ? (FLAGS | IS_END_BIT) : FLAGS);
+        buffer.putInt(streamID & Constants.STREAM_ID_MASK);
         buffer.put(compressedHeaders);
         return buffer.array();
 
@@ -135,7 +131,7 @@ public final class Headers extends Message {
      * @return end value
      */
     public boolean isEnd(){
-        return this.isEnd;
+        return isEnd;
     }
 
     /**
@@ -148,13 +144,13 @@ public final class Headers extends Message {
 
     @Override
     public byte getCode() {
-        return 0x1;
+        return Constants.HEADERS_TYPE;
     }
 
     @Override
     public void setStreamID(int streamID) throws BadAttributeException {
         if(streamID <= 0){
-            throw new BadAttributeException("StreamID cannot be 0", "streamID");
+            throw new BadAttributeException("StreamID must be a positive integer", "streamID");
         }
         this.streamID = streamID;
     }
@@ -169,9 +165,9 @@ public final class Headers extends Message {
     public String toString(){
         StringBuilder builder = new StringBuilder();
         builder.append(String.format("Headers: StreamID=%d isEnd=%b (",
-                                                    this.streamID, this.isEnd));
+                                                    streamID, isEnd));
 
-        for(Map.Entry<String, String> entry : this.headerValues.entrySet()){
+        for(Map.Entry<String, String> entry : headerValues.entrySet()){
             builder.append(String.format("[%s=%s]", entry.getKey(), entry.getValue()));
         }
         builder.append(")");
@@ -184,7 +180,7 @@ public final class Headers extends Message {
      * @return the header value for the name
      */
     public String getValue(String name){
-        return this.headerValues.getOrDefault(name, null);
+        return headerValues.getOrDefault(name, null);
     }
 
     /**
@@ -192,7 +188,7 @@ public final class Headers extends Message {
      * @return set of names
      */
     public SortedSet<String> getNames(){
-        return new TreeSet<>(this.headerValues.keySet());
+        return new TreeSet<>(headerValues.keySet());
     }
 
     /**
@@ -212,7 +208,7 @@ public final class Headers extends Message {
             throw new BadAttributeException("Invalid header value", "value");
         }
 
-        this.headerValues.put(name, value);
+        headerValues.put(name, value);
     }
 
     /**
@@ -293,8 +289,8 @@ public final class Headers extends Message {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (isEnd ? 1 : 0);
-        result = 31 * result + headerValues.hashCode();
+        result = Constants.HASH_PRIME * result + (isEnd ? 1 : 0);
+        result = Constants.HASH_PRIME * result + headerValues.hashCode();
         return result;
     }
 }

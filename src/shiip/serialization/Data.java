@@ -19,6 +19,7 @@ public final class Data extends Message {
 
     private static final byte ERROR_BIT = 0x8;
     private static final byte IS_END_BIT = 0x1;
+    private static final byte FLAGS = 0x0;
 
     private boolean isEnd;
     private byte[] data;
@@ -50,7 +51,7 @@ public final class Data extends Message {
 
         byte flags = buffer.get();
         int rAndStreamID = buffer.getInt();
-        int streamID = rAndStreamID & 0x7FFFFFFF;
+        int streamID = rAndStreamID & Constants.STREAM_ID_MASK;
         setStreamID(streamID);
 
         // Retrieve the remaining data
@@ -93,7 +94,7 @@ public final class Data extends Message {
     @Override
     public final void setStreamID(int streamID) throws BadAttributeException {
         if(streamID <= 0){
-            throw new BadAttributeException("streamID cannot be 0", "streamID");
+            throw new BadAttributeException("streamID must be a positive integer", "streamID");
         }
         this.streamID = streamID;
     }
@@ -135,22 +136,17 @@ public final class Data extends Message {
     public byte[] encode(Encoder encoder) {
         ByteBuffer buffer = ByteBuffer.allocate(Constants.HEADER_BYTES
                                                     + this.data.length);
-        byte type = (byte)0x0;
-        byte flags = (byte)0x0;
-        if(this.isEnd){
-            flags = (byte) (flags | 0x1);
-        }
-        buffer.put(type);
-        buffer.put(flags);
-        int rAndStreamID = this.streamID & 0x7FFFFFFF;
-        buffer.putInt(rAndStreamID);
-        buffer.put(this.data);
+
+        buffer.put(Constants.DATA_TYPE);
+        buffer.put(isEnd ? (FLAGS | IS_END_BIT) : FLAGS);
+        buffer.putInt(streamID & Constants.STREAM_ID_MASK);
+        buffer.put(data);
         return buffer.array();
     }
 
     @Override
     public byte getCode() {
-        return 0x0;
+        return Constants.DATA_TYPE;
     }
 
     @Override
@@ -168,8 +164,8 @@ public final class Data extends Message {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (isEnd ? 1 : 0);
-        result = 31 * result + Arrays.hashCode(data);
+        result = Constants.HASH_PRIME * result + (isEnd ? 1 : 0);
+        result =  Constants.HASH_PRIME * result + Arrays.hashCode(data);
         return result;
     }
 
