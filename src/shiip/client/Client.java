@@ -45,7 +45,8 @@ public class Client {
 
             Deframer deframer = openConnection(socket);
             Map<Integer, FileOutputStream> ongoingDownloads = new TreeMap<>();
-            startStreams(Arrays.copyOfRange(args, PATHS_NDX, args.length), host, ongoingDownloads);
+            String[] paths = Arrays.copyOfRange(args, PATHS_NDX, args.length);
+            startStreams(paths, host, ongoingDownloads);
 
             while(ongoingDownloads.size() > 0){
 

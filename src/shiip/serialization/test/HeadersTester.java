@@ -408,8 +408,7 @@ public class HeadersTester {
          * provides arguments
          */
         @Override
-        public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext)
-                                                            throws Exception {
+        public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) {
             List<Integer> validStreamIDs = Arrays.asList( 1, 20, 50);
             List<Boolean> validIsEnd = Arrays.asList(true, false);
             List<Map<String, String>> validOptions = Arrays.asList(
@@ -457,8 +456,7 @@ public class HeadersTester {
     static class ToStringNoOptionsProvider implements ArgumentsProvider {
 
         @Override
-        public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext)
-                                                                throws Exception {
+        public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) {
             List<Integer> validStreamIDs = Arrays.asList( 1, 20, 50);
             List<Boolean> validIsEnd = Arrays.asList(true, false);
 
