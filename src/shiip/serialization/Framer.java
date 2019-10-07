@@ -69,6 +69,12 @@ public class Framer {
         out.flush();
     }
 
+    /**
+     * Encodes an integer into bytes
+     * @param toEncode the integer to encode
+     * @param out the outputstream to encode to
+     * @throws IOException if error
+     */
     private void encodeInteger(int toEncode, OutputStream out) throws IOException {
         for(int i = 0; i < ENCODE_CYCLES; i++){
             out.write((toEncode >> Constants.BYTESHIFT * (ENCODE_CYCLES - i - 1) & Constants.BYTEMASK));

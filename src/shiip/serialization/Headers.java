@@ -157,7 +157,7 @@ public final class Headers extends Message {
 
     /**
      * Returns string of the form
-     * Headers: StreamID=<streamid> isEnd=<end> ([<name> = <value>]...[<name> = <value>])
+     * Headers: StreamID=streamid isEnd=end ([name=value]...[name=value])
      * For example
      *
      * Headers: StreamID=5 isEnd=false ([method=GET][color=blue])

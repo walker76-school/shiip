@@ -6,9 +6,6 @@
 
 package shiip.serialization;
 
-import java.io.IOException;
-import java.io.OutputStream;
-
 /**
  * Holds constant values used for serialization and deserialization
  * by the Framer and Deframer

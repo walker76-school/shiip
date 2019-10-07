@@ -171,7 +171,7 @@ public final class Data extends Message {
 
     /**
      * Returns string of the form
-     * Data: StreamID=<streamid> isEnd=<end> data=<length>
+     * Data: StreamID=streamid isEnd=end data=length
      *
      * For example
      * Data: StreamID=5 isEnd=true data=5

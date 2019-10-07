@@ -568,6 +568,7 @@ public class MessageTester {
 
         /**
          * window update encoding
+         * @param headerSize the size of the header
          */
         @DisplayName("Valid Window_Update Encoding")
         @ParameterizedTest

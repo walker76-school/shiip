@@ -111,6 +111,7 @@ public class DeframerTest {
 
         /**
          * Tests a payload with malformed length
+         * @param arrLength the length of the array
          */
         @ParameterizedTest(name = "length = {0}")
         @ValueSource(ints = {0, 1, 2})
@@ -142,6 +143,7 @@ public class DeframerTest {
 
         /**
          * Tests EOFException is thrown if missing headers
+         * @param headerLength the length of the header
          */
         @ParameterizedTest(name = "header = {0}")
         @ValueSource(ints = {0, 1, 2, 3, 4, 5})

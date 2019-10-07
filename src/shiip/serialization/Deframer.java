@@ -75,6 +75,11 @@ public class Deframer {
         return messageBuffer;
     }
 
+    /**
+     * Decodes a byte array into an integer
+     * @param bytes the byte array to decode
+     * @return the integer from the bytes
+     */
     private int decodeInteger(byte[] bytes){
         int ret = 0;
         for(int i = 0; i < bytes.length; i++){

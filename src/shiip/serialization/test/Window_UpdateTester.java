@@ -144,6 +144,7 @@ public class Window_UpdateTester {
 
         /**
          * Tests that BadAttributeException is thrown on invalid streamID
+         * @param streamID the streamID
          */
         @ParameterizedTest(name = "streamID = {0}")
         @ValueSource(ints = {-10, -1})
@@ -194,7 +195,7 @@ public class Window_UpdateTester {
     @DisplayName("equals")
     public class Equals {
         /**
-         * Equal streamID & increment
+         * Equal streamID and increment
          */
         @DisplayName("Equal streamID & increment")
         @Test
@@ -233,7 +234,7 @@ public class Window_UpdateTester {
         }
 
         /**
-         * Unequal streamID & increment
+         * Unequal streamID and increment
          */
         @DisplayName("Unequal streamID & increment")
         @Test

@@ -134,6 +134,7 @@ public class FramerTest {
 
         /**
          * Verify that an IOException is thrown if invalid headers
+         * @param headerLength the length of the header
          */
         @ParameterizedTest(name="length = {0}")
         @ValueSource(ints = {0, 1, 2, 3, 4, 5})

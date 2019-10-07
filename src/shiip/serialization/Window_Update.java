@@ -140,7 +140,7 @@ public final class Window_Update extends Message {
 
     /**
      * Returns string of the form
-     * Window_Update: StreamID=<streamid> increment=<inc>
+     * Window_Update: StreamID=streamid increment=inc
      *
      * For example
      * Window_Update: StreamID=5 increment=1024

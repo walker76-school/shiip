@@ -11,29 +11,57 @@ import com.twitter.hpack.Encoder;
 import shiip.serialization.*;
 import tls.TLSFactory;
 
-import java.io.*;
+import java.io.OutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.Socket;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * A TCP client for SHiiP frames
+ * @author Andrew Walker
  */
 public class Client {
 
+    // Encoding for serialization
     private static final Charset ENC = StandardCharsets.US_ASCII;
+
+    // Table size for Encoder and Decoder
     private static final int MAX_TABLE_SIZE = 4096;
+
+    // Initial HTTP handshake message
     private static final String HANDSHAKE_MESSAGE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
+
+    // Valid status for a Headers
     private static final String VALID_STATUS = "200";
+
+    // Status key for Headers
+    private static final String STATUS_KEY = "status";
+
+    // Minimum number of parameters allowed
+    private static final int MIN_ARGS = 3;
+
+    // Index of the host in the parameters
     private static final int HOST_NDX = 0;
+
+    // Index of the port in the parameters
     private static final int PORT_NDX = 1;
+
+    // Index of the start of the paths in the parameters
     private static final int PATHS_NDX = 2;
 
+    // StreamID for the connection
+    private static final int CONNECTION_STREAMID = 0;
+
+    // Framer to send frames to the socket
     private static Framer framer;
 
     public static void main(String[] args) {
-        if(args.length < 3){
+        if(args.length < MIN_ARGS){
             System.err.println("Usage: Client [host] [port] [paths...]");
             return;
         }
@@ -48,7 +76,7 @@ public class Client {
             String[] paths = Arrays.copyOfRange(args, PATHS_NDX, args.length);
             startStreams(paths, host, ongoingDownloads);
 
-            while(ongoingDownloads.size() > 0){
+            while(!ongoingDownloads.isEmpty()){
 
                 Message m = getMessage(deframer, decoder);
                 if(m != null){
@@ -150,7 +178,7 @@ public class Client {
         }
         System.out.println("Received message: " + m);
         try {
-            framer.putFrame(new Window_Update(0, d.getData().length).encode(null));
+            framer.putFrame(new Window_Update(CONNECTION_STREAMID, d.getData().length).encode(null));
             framer.putFrame(new Window_Update(d.getStreamID(), d.getData().length).encode(null));
 
             // Write data
@@ -164,7 +192,7 @@ public class Client {
 
         } catch (IOException | BadAttributeException e){
             System.err.println(e.getMessage());
-            System.exit(-1);
+            System.exit(1);
         }
     }
 
@@ -182,8 +210,8 @@ public class Client {
         }
 
         System.out.println("Received message: " + m.toString());
-        if(!h.getNames().contains(":status") || !h.getValue(":status").startsWith(VALID_STATUS)) {
-            System.err.println("Bad status: " + h.getValue(":status"));
+        if(!h.getNames().contains(STATUS_KEY) || !h.getValue(STATUS_KEY).startsWith(VALID_STATUS)) {
+            System.err.println("Bad status: " + h.getValue(STATUS_KEY));
             ongoingDownloads.remove(h.getStreamID());
         }
     }

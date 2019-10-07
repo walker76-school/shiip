@@ -37,6 +37,7 @@ public class HeadersTester {
 
         /**
          * Tests constructor with invalid streamID
+         * @param streamID the streamID
          */
         @ParameterizedTest(name = "streamID = {0}")
         @ValueSource(ints = {-10, -1, 0})
@@ -129,6 +130,7 @@ public class HeadersTester {
 
         /**
          * Tests that BadAttributeException is thrown on invalid streamID
+         * @param streamID the streamID
          */
         @ParameterizedTest(name = "streamID = {0}")
         @ValueSource(ints = {-10, -1, 0})

@@ -1,3 +1,9 @@
+/*******************************************************
+ * Author: Jeff Donahoo
+ * Assignment: Prog 2
+ * Class: Data Comm
+ *******************************************************/
+
 package tls;
 
 import java.net.Socket;
@@ -10,8 +16,18 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+/**
+ * Factory for creating TLS secured sockets
+ */
 public class TLSFactory {
 
+    /**
+     * Creates a TLS secure socket for the given server and port
+     * @param server server to connect to
+     * @param port port number to connect on
+     * @return a TLS secure socket for the given server and port
+     * @throws Exception if error
+     */
     public static Socket getClientSocket(String server, int port) throws Exception {
         final SSLContext ctx = SSLContext.getInstance("TLSv1.3");
         ctx.init(null, new TrustManager[] { new X509TrustManager() {
