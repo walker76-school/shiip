@@ -45,7 +45,7 @@ public class Framer {
      * @throws IOException if I/O problem or frame payload too long
      * @throws NullPointerException if message is null
      */
-    public void	putFrame(byte[] message) throws IOException, NullPointerException {
+    public synchronized void putFrame(byte[] message) throws IOException, NullPointerException {
         Objects.requireNonNull(message, "Payload cannot be null");
 
         // Retrieve the actual length of the payload without header

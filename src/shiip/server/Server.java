@@ -18,19 +18,14 @@ public class Server {
         }
 
         ExecutorService pool = initThreadPool(args[1]);
-        Logger logger = Logger.getLogger("server");
         if(pool != null) {
 
             try (ServerSocket servSock = new ServerSocket(Integer.parseInt(args[0]))) {
 
                 while (true) { // Run forever, accepting and servicing connections
+
                     Socket clntSock = servSock.accept();     // Get client connection
-
-                    SocketAddress clientAddress = clntSock.getRemoteSocketAddress();
-                    System.out.println("Handling client at " + clientAddress);
-
-                    pool.execute(new ShiipServerProtocol(clntSock, logger));
-
+                    pool.execute(new ShiipServerProtocol(clntSock));
                     clntSock.close();  // Close the socket.  We are done with this client!
                 }
                 /* NOT REACHED */
@@ -39,6 +34,8 @@ public class Server {
             } catch (NumberFormatException e) {
                 System.err.println("Parameter(s): <Port> <ThreadCount> <DocumentRoot>");
             }
+        } else {
+            System.err.println("Help");
         }
     }
 
