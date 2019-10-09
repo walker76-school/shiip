@@ -18,7 +18,8 @@ public class Server {
         Logger logger = Logger.getLogger("ShiipServer");
         // Test for correct # of args
         if(args.length != 3){
-            logger.log(Level.WARNING, "Parameter(s): <Port> <ThreadCount> <DocumentRoot>");
+            logger.log(Level.SEVERE, "Parameter(s): <Port> <ThreadCount> <DocumentRoot>");
+            return;
         }
 
         ExecutorService pool = initThreadPool(args[1], logger);
@@ -29,7 +30,7 @@ public class Server {
                 while (true) { // Run forever, accepting and servicing connections
 
                     try(Socket clntSock = servSock.accept()){ // Auto-closing
-                        pool.execute(new ShiipServerProtocol(clntSock, logger));
+                        pool.execute(new ShiipServerProtocol(clntSock, args[2], logger));
                     }
                 }
                 /* NOT REACHED */

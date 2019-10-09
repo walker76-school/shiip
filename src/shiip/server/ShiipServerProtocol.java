@@ -29,11 +29,13 @@ public class ShiipServerProtocol implements Runnable {
     private static final int TIMEOUT = 20000;
 
     private final Socket clntSock;
+    private final String documentRoot;
     private final Logger logger;
     private final ExecutorService pool;
 
-    public ShiipServerProtocol(Socket clntSock, Logger logger) {
+    public ShiipServerProtocol(Socket clntSock, String documentRoot, Logger logger) {
         this.clntSock = clntSock;
+        this.documentRoot = documentRoot;
         this.logger = logger;
         pool = Executors.newFixedThreadPool(POOL_SIZE);
     }
@@ -142,9 +144,10 @@ public class ShiipServerProtocol implements Runnable {
             return; // terminate stream
         }
 
-        File file = new File(path);
+        String filePath = documentRoot + File.pathSeparator + path;
+        File file = new File(filePath);
 
-        if(!file.exists() || !Files.isReadable(Paths.get(path))){
+        if(!file.exists() || !Files.isReadable(Paths.get(filePath))){
             logger.log(Level.WARNING, "Unable to open file: " + file);
 
             // Send headers
@@ -168,7 +171,7 @@ public class ShiipServerProtocol implements Runnable {
         // Record the streamID
         streamIDs.add(streamID);
 
-        pool.execute(new ShiipDataProtocol(framer, h, logger));
+        pool.execute(new ShiipDataProtocol(framer, streamID, filePath, logger));
 
 
     }

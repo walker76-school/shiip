@@ -20,11 +20,11 @@ public class ShiipDataProtocol implements Runnable {
     private final int streamID;
     private final String filePath;
 
-    public ShiipDataProtocol(Framer framer, Headers headers, Logger logger) {
+    public ShiipDataProtocol(Framer framer, Integer streamID, String filePath, Logger logger) {
         this.framer = framer;
         this.logger = logger;
-        this.streamID = headers.getStreamID();
-        this.filePath = headers.getValue(PATH_KEY);
+        this.streamID = streamID;
+        this.filePath = filePath;
     }
 
     @Override
