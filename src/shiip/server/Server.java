@@ -5,6 +5,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -15,7 +16,15 @@ public class Server {
 
     public static void main(String[] args) {
 
+        // Establish Logger
         Logger logger = Logger.getLogger("ShiipServer");
+        try {
+            logger.addHandler(new FileHandler("/output.log"));
+        } catch (IOException e){
+            logger.log(Level.WARNING, e.getMessage());
+            return;
+        }
+
         // Test for correct # of args
         if(args.length != 3){
             logger.log(Level.SEVERE, "Parameter(s): <Port> <ThreadCount> <DocumentRoot>");

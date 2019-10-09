@@ -12,9 +12,6 @@ import static shiip.server.Server.MINDATAINTERVAL;
 
 public class ShiipDataProtocol implements Runnable {
 
-    // String to extract the path from Headers
-    private static final String PATH_KEY = ":path";
-
     private final Framer framer;
     private final Logger logger;
     private final int streamID;
@@ -34,22 +31,28 @@ public class ShiipDataProtocol implements Runnable {
             byte[] buffer = new byte[MAXDATASIZE];
             FileInputStream in = new FileInputStream(filePath);
 
+            boolean sentIsEnd = false; // In case file.length is evenly divisible
+
             int read;
             long currentTime = System.currentTimeMillis();
-            boolean sentIsEnd = false;
             while((read = in.readNBytes(buffer, 0, MAXDATASIZE)) != -1){
 
+                // Wait the full interval before sending
                 while(System.currentTimeMillis() - currentTime < MINDATAINTERVAL){
                     // Do nothing but sleep
                     Thread.sleep(MINDATAINTERVAL);
                 }
 
+                // Check if we've sent the last frame
                 if(read < MAXDATASIZE){
                     sentIsEnd = true;
                 }
 
+                // Send the Data frame
                 Data data = new Data(streamID, read < MAXDATASIZE, buffer);
                 framer.putFrame(data.encode(null));
+
+                // Reset the waiting interval
                 currentTime = System.currentTimeMillis();
             }
 
@@ -62,6 +65,7 @@ public class ShiipDataProtocol implements Runnable {
 
         } catch (IOException | BadAttributeException | InterruptedException e) {
             logger.log(Level.SEVERE, e.getMessage());
+            // Stream is closed
         }
     }
 }

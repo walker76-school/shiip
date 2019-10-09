@@ -5,6 +5,8 @@ import shiip.serialization.*;
 
 import java.io.*;
 import java.net.Socket;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -28,6 +30,12 @@ public class ShiipServerProtocol implements Runnable {
     // Timeout for sockets on IO - 20 seconds
     private static final int TIMEOUT = 20000;
 
+    // Encoding for handshake message
+    private static final Charset CHARENC = StandardCharsets.US_ASCII;
+
+    // Initial HTTP handshake message
+    private static final String HANDSHAKE_MESSAGE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
+
     private final Socket clntSock;
     private final String documentRoot;
     private final Logger logger;
@@ -48,7 +56,7 @@ public class ShiipServerProtocol implements Runnable {
             OutputStream out = clntSock.getOutputStream();
         ) {
 
-            // Some intial util objects
+            // Some initial util objects
             Deframer deframer = new Deframer(in);
             Framer framer = new Framer(out);
             Decoder decoder = new Decoder(MAX_TABLE_SIZE, MAX_TABLE_SIZE);
@@ -57,6 +65,18 @@ public class ShiipServerProtocol implements Runnable {
             List<Integer> streamIDs = new ArrayList<>();
 
             // Set the initial timeout of the socket
+            clntSock.setSoTimeout(TIMEOUT);
+
+            // Read the handshake message
+            byte[] handshake = new byte[HANDSHAKE_MESSAGE.length()];
+            in.readNBytes(handshake, 0, HANDSHAKE_MESSAGE.length());
+            String handshakeMessage = b2s(handshake);
+            if(!handshakeMessage.equals(HANDSHAKE_MESSAGE)){
+                logger.log(Level.WARNING, "Invalid handshake message");
+                return; // Kill connection
+            }
+
+            // Reset timeout
             clntSock.setSoTimeout(TIMEOUT);
 
             // Loop until IOException breaks out
@@ -93,6 +113,7 @@ public class ShiipServerProtocol implements Runnable {
         } catch (BadAttributeException ex){
             logger.log(Level.SEVERE, ex.getMessage());
             // Socket should auto-close
+            // Connection is killed
         }
     }
 
@@ -201,5 +222,9 @@ public class ShiipServerProtocol implements Runnable {
      */
     private void handleWindowUpdate(Message m) {
         logger.log(Level.INFO, "Received message: " + m);
+    }
+
+    private static String b2s(byte[] b) {
+        return new String(b, CHARENC);
     }
 }
