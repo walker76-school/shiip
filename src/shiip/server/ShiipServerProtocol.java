@@ -3,28 +3,38 @@ package shiip.server;
 import com.twitter.hpack.Decoder;
 import shiip.serialization.*;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
-public class ShiipServerProtocol extends ShiipProtocol {
+public class ShiipServerProtocol implements Runnable {
 
     // Table size for Encoder and Decoder
     private static final int MAX_TABLE_SIZE = 4096;
 
+    // Max number of threads a connection is allowed to spawn
     private static final int POOL_SIZE = 10;
 
-    private final Socket clntSock;               // Socket connect to client
-    private final Decoder decoder;
+    // Key for finding the path
+    private static final String PATH_KEY = ":path";
+
+    // Timeout for sockets on IO - 20 seconds
+    private static final int TIMEOUT = 20000;
+
+    private final Socket clntSock;
+    private final Logger logger;
     private final ExecutorService pool;
 
-    public ShiipServerProtocol(Socket clntSock) {
+    public ShiipServerProtocol(Socket clntSock, Logger logger) {
         this.clntSock = clntSock;
-        decoder = new Decoder(MAX_TABLE_SIZE, MAX_TABLE_SIZE);
+        this.logger = logger;
         pool = Executors.newFixedThreadPool(POOL_SIZE);
     }
 
@@ -36,18 +46,34 @@ public class ShiipServerProtocol extends ShiipProtocol {
             OutputStream out = clntSock.getOutputStream();
         ) {
 
+            // Some intial util objects
             Deframer deframer = new Deframer(in);
             Framer framer = new Framer(out);
+            Decoder decoder = new Decoder(MAX_TABLE_SIZE, MAX_TABLE_SIZE);
 
+            // To keep track of seen streamIDs
+            List<Integer> streamIDs = new ArrayList<>();
+
+            // Set the initial timeout of the socket
+            clntSock.setSoTimeout(TIMEOUT);
+
+            // Loop until IOException breaks out
             while (true) {
+
+                // Attempt to retrieve the first frame
                 Message m = getMessage(deframer, decoder);
+
+                // If we have read in data then reset our timeout
+                clntSock.setSoTimeout(TIMEOUT);
+
+                // If m is not null then we read a valid frame
                 if (m != null) {
                     switch (m.getCode()) {
                         case Constants.DATA_TYPE:
                             handleData(m);
                             break;
                         case Constants.HEADERS_TYPE:
-                            handleHeaders(m, framer, pool);
+                            handleHeaders(m, framer, streamIDs);
                             break;
                         case Constants.SETTINGS_TYPE:
                             handleSettings(m);
@@ -61,9 +87,10 @@ public class ShiipServerProtocol extends ShiipProtocol {
 
         } catch (IOException ex) {
             // This block should only trigger if an IOException is thrown meaning
-            // the client has disconnected
-
-            getLogger().log(Level.WARNING, ex.getMessage());
+            // the client has disconnected or a timeout has occurred
+        } catch (BadAttributeException ex){
+            logger.log(Level.SEVERE, ex.getMessage());
+            // Socket should auto-close
         }
     }
 
@@ -76,10 +103,10 @@ public class ShiipServerProtocol extends ShiipProtocol {
         try {
             byte[] framedBytes = deframer.getFrame();
             return Message.decode(framedBytes, decoder);
-        } catch (IllegalArgumentException e) {
-            getLogger().log(Level.WARNING, "Unable to parse: " + e.getMessage());
+        } catch (IllegalArgumentException | EOFException e) {
+            logger.log(Level.WARNING, "Unable to parse: " + e.getMessage());
         } catch (BadAttributeException | NullPointerException e) {
-            getLogger().log(Level.WARNING, "Invalid Message: " + e.getMessage());
+            logger.log(Level.WARNING, "Invalid Message: " + e.getMessage());
         }
 
         return null;
@@ -89,10 +116,61 @@ public class ShiipServerProtocol extends ShiipProtocol {
      * Handler for a Headers message
      *
      * @param m the Headers message
+     * @param streamIDs a list of seen streamIDs
      */
-    private void handleHeaders(Message m, Framer framer, ExecutorService pool) {
+    private void handleHeaders(Message m, Framer framer, List<Integer> streamIDs) throws BadAttributeException{
         Headers h = (Headers) m;
-        pool.execute(new ShiipDataProtocol(framer, h.getStreamID(), h.getValue(":path")));
+
+        int streamID = h.getStreamID();
+        if(streamIDs.contains(streamID)){
+            logger.log(Level.WARNING, "Duplicate request: " + h);
+        }
+
+        // If it's even then it's illegal
+        if(streamID % 2 == 0){
+            logger.log(Level.WARNING, "Illegal stream ID: " + h);
+        }
+
+        String path = h.getValue(PATH_KEY);
+        if(path == null){
+            logger.log(Level.WARNING, "No path specified");
+
+            // Send headers
+            Headers headers = new Headers(streamID, false);
+            headers.addValue("status", "404 File not found");
+
+            return; // terminate stream
+        }
+
+        File file = new File(path);
+
+        if(!file.exists() || !Files.isReadable(Paths.get(path))){
+            logger.log(Level.WARNING, "Unable to open file: " + file);
+
+            // Send headers
+            Headers headers = new Headers(streamID, false);
+            headers.addValue("status", "404 File not found");
+
+            return; // Terminate stream
+
+        }
+
+        if(file.isDirectory()){
+            logger.log(Level.WARNING, "Cannot request directory: " + file);
+
+            // Send headers
+            Headers headers = new Headers(streamID, false);
+            headers.addValue("status", "404 Cannot request directory");
+
+            return; // Terminate stream
+        }
+
+        // Record the streamID
+        streamIDs.add(streamID);
+
+        pool.execute(new ShiipDataProtocol(framer, h, logger));
+
+
     }
 
     /**
@@ -101,7 +179,7 @@ public class ShiipServerProtocol extends ShiipProtocol {
      * @param m the Data message
      */
     private void handleData(Message m) {
-        getLogger().log(Level.WARNING, "Invalid message: " + m);
+        logger.log(Level.WARNING, "Invalid message: " + m);
     }
 
     /**
@@ -110,7 +188,7 @@ public class ShiipServerProtocol extends ShiipProtocol {
      * @param m the Settings message
      */
     private void handleSettings(Message m) {
-        getLogger().log(Level.INFO, "Received message: " + m);
+        logger.log(Level.INFO, "Received message: " + m);
     }
 
     /**
@@ -119,6 +197,6 @@ public class ShiipServerProtocol extends ShiipProtocol {
      * @param m the Window_Update message
      */
     private void handleWindowUpdate(Message m) {
-        getLogger().log(Level.INFO, "Received message: " + m);
+        logger.log(Level.INFO, "Received message: " + m);
     }
 }
