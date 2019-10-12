@@ -31,11 +31,8 @@ public class ShiipDataProtocol implements Runnable {
             byte[] buffer = new byte[MAXDATASIZE];
             FileInputStream in = new FileInputStream(filePath);
 
-            boolean sentIsEnd = false; // In case file.length is evenly divisible
-
-            int read;
             long currentTime = System.currentTimeMillis();
-            while((read = in.readNBytes(buffer, 0, MAXDATASIZE)) != -1){
+            while(in.read(buffer, 0, MAXDATASIZE) != -1){
 
                 // Wait the full interval before sending
                 while(System.currentTimeMillis() - currentTime < MINDATAINTERVAL){
@@ -43,25 +40,16 @@ public class ShiipDataProtocol implements Runnable {
                     Thread.sleep(MINDATAINTERVAL);
                 }
 
-                // Check if we've sent the last frame
-                if(read < MAXDATASIZE){
-                    sentIsEnd = true;
-                }
-
                 // Send the Data frame
-                Data data = new Data(streamID, read < MAXDATASIZE, buffer);
+                Data data = new Data(streamID, false, buffer);
                 framer.putFrame(data.encode(null));
 
                 // Reset the waiting interval
                 currentTime = System.currentTimeMillis();
             }
 
-            // If we haven't sent the end of the data because the length of the
-            // file was evenly divisible by MAXDATASIZE then send a Data isEnd
-            if(!sentIsEnd){
-                Data data = new Data(streamID, true, new byte[]{});
-                framer.putFrame(data.encode(null));
-            }
+            Data data = new Data(streamID, true, new byte[]{});
+            framer.putFrame(data.encode(null));
 
         } catch (IOException | BadAttributeException | InterruptedException e) {
             logger.log(Level.SEVERE, e.getMessage());

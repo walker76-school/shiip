@@ -1,5 +1,7 @@
 package shiip.server;
 
+import tls.TLSFactory;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -34,19 +36,23 @@ public class Server {
         ExecutorService pool = initThreadPool(args[1], logger);
         if(pool != null) {
 
-            try (ServerSocket servSock = new ServerSocket(Integer.parseInt(args[0]))) {
+            try (ServerSocket servSock = TLSFactory.getServerListeningSocket(Integer.parseInt(args[0]), "mykeystore", "secret")) {
 
                 while (true) { // Run forever, accepting and servicing connections
 
-                    try(Socket clntSock = servSock.accept()){ // Auto-closing
+                    try {
+                        Socket clntSock = TLSFactory.getServerConnectedSocket(servSock);
                         pool.execute(new ShiipServerProtocol(clntSock, args[2], logger));
+                    } catch (IOException e){
+                        logger.log(Level.WARNING, e.getMessage());
                     }
+
                 }
                 /* NOT REACHED */
-            } catch (IOException e) {
-                logger.log(Level.WARNING, e.getMessage());
             } catch (NumberFormatException e) {
                 logger.log(Level.WARNING, "Parameter(s): <Port> <ThreadCount> <DocumentRoot>");
+            } catch (Exception e) {
+                logger.log(Level.WARNING, e.getMessage());
             }
         }
     }

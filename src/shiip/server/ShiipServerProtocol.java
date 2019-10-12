@@ -1,6 +1,7 @@
 package shiip.server;
 
 import com.twitter.hpack.Decoder;
+import com.twitter.hpack.Encoder;
 import shiip.serialization.*;
 
 import java.io.*;
@@ -27,11 +28,14 @@ public class ShiipServerProtocol implements Runnable {
     // Key for finding the path
     private static final String PATH_KEY = ":path";
 
+    // Key for finding the status
+    private static final String STATUS_KEY = ":status";
+
     // Timeout for sockets on IO - 20 seconds
     private static final int TIMEOUT = 20000;
 
     // Encoding for handshake message
-    private static final Charset CHARENC = StandardCharsets.US_ASCII;
+    private static final Charset ENC = StandardCharsets.US_ASCII;
 
     // Initial HTTP handshake message
     private static final String HANDSHAKE_MESSAGE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
@@ -60,6 +64,7 @@ public class ShiipServerProtocol implements Runnable {
             Deframer deframer = new Deframer(in);
             Framer framer = new Framer(out);
             Decoder decoder = new Decoder(MAX_TABLE_SIZE, MAX_TABLE_SIZE);
+            Encoder encoder = new Encoder(MAX_TABLE_SIZE);
 
             // To keep track of seen streamIDs
             List<Integer> streamIDs = new ArrayList<>();
@@ -68,11 +73,12 @@ public class ShiipServerProtocol implements Runnable {
             clntSock.setSoTimeout(TIMEOUT);
 
             // Read the handshake message
-            byte[] handshake = new byte[HANDSHAKE_MESSAGE.length()];
-            in.readNBytes(handshake, 0, HANDSHAKE_MESSAGE.length());
+            int handshakeLength = HANDSHAKE_MESSAGE.getBytes(ENC).length;
+            byte[] handshake = new byte[handshakeLength];
+            in.readNBytes(handshake, 0, handshakeLength);
             String handshakeMessage = b2s(handshake);
             if(!handshakeMessage.equals(HANDSHAKE_MESSAGE)){
-                logger.log(Level.WARNING, "Invalid handshake message");
+                logger.log(Level.WARNING, "Invalid handshake message - " + handshakeMessage);
                 return; // Kill connection
             }
 
@@ -95,7 +101,7 @@ public class ShiipServerProtocol implements Runnable {
                             handleData(m);
                             break;
                         case Constants.HEADERS_TYPE:
-                            handleHeaders(m, framer, streamIDs);
+                            handleHeaders(m, framer, encoder, streamIDs);
                             break;
                         case Constants.SETTINGS_TYPE:
                             handleSettings(m);
@@ -137,11 +143,11 @@ public class ShiipServerProtocol implements Runnable {
 
     /**
      * Handler for a Headers message
-     *
-     * @param m the Headers message
+     *  @param m the Headers message
+     * @param encoder
      * @param streamIDs a list of seen streamIDs
      */
-    private void handleHeaders(Message m, Framer framer, List<Integer> streamIDs) throws BadAttributeException{
+    private void handleHeaders(Message m, Framer framer, Encoder encoder, List<Integer> streamIDs) throws BadAttributeException, IOException{
         Headers h = (Headers) m;
 
         int streamID = h.getStreamID();
@@ -160,12 +166,13 @@ public class ShiipServerProtocol implements Runnable {
 
             // Send headers
             Headers headers = new Headers(streamID, false);
-            headers.addValue("status", "404 File not found");
+            headers.addValue(STATUS_KEY, "404 File not found");
+            framer.putFrame(headers.encode(encoder));
 
             return; // terminate stream
         }
 
-        String filePath = documentRoot + File.pathSeparator + path;
+        String filePath = documentRoot.concat(path);
         File file = new File(filePath);
 
         if(!file.exists() || !Files.isReadable(Paths.get(filePath))){
@@ -173,7 +180,8 @@ public class ShiipServerProtocol implements Runnable {
 
             // Send headers
             Headers headers = new Headers(streamID, false);
-            headers.addValue("status", "404 File not found");
+            headers.addValue(STATUS_KEY, "404 File not found");
+            framer.putFrame(headers.encode(encoder));
 
             return; // Terminate stream
 
@@ -184,13 +192,18 @@ public class ShiipServerProtocol implements Runnable {
 
             // Send headers
             Headers headers = new Headers(streamID, false);
-            headers.addValue("status", "404 Cannot request directory");
+            headers.addValue(STATUS_KEY, "404 Cannot request directory");
+            framer.putFrame(headers.encode(encoder));
 
             return; // Terminate stream
         }
 
         // Record the streamID
         streamIDs.add(streamID);
+
+        Headers headers = new Headers(streamID, false);
+        headers.addValue(STATUS_KEY, "200 OK");
+        framer.putFrame(headers.encode(encoder));
 
         pool.execute(new ShiipDataProtocol(framer, streamID, filePath, logger));
 
@@ -225,6 +238,6 @@ public class ShiipServerProtocol implements Runnable {
     }
 
     private static String b2s(byte[] b) {
-        return new String(b, CHARENC);
+        return new String(b, ENC);
     }
 }
