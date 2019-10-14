@@ -48,6 +48,7 @@ public class ShiipDataProtocol implements Runnable {
                 currentTime = System.currentTimeMillis();
             }
 
+            // Send final data frame to show isEnd
             Data data = new Data(streamID, true, new byte[]{});
             framer.putFrame(data.encode(null));
 

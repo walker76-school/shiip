@@ -60,30 +60,29 @@ public class ShiipServerProtocol implements Runnable {
             OutputStream out = clntSock.getOutputStream();
         ) {
 
-            // Some initial util objects
-            Deframer deframer = new Deframer(in);
-            Framer framer = new Framer(out);
-            Decoder decoder = new Decoder(MAX_TABLE_SIZE, MAX_TABLE_SIZE);
-            Encoder encoder = new Encoder(MAX_TABLE_SIZE);
-
             // To keep track of seen streamIDs
             List<Integer> streamIDs = new ArrayList<>();
 
             // Set the initial timeout of the socket
             clntSock.setSoTimeout(TIMEOUT);
 
+            // Some initial util objects
+            Deframer deframer = new Deframer(in);
+            Framer framer = new Framer(out);
+            Decoder decoder = new Decoder(MAX_TABLE_SIZE, MAX_TABLE_SIZE);
+            Encoder encoder = new Encoder(MAX_TABLE_SIZE);
+
             // Read the handshake message
             int handshakeLength = HANDSHAKE_MESSAGE.getBytes(ENC).length;
             byte[] handshake = new byte[handshakeLength];
             in.readNBytes(handshake, 0, handshakeLength);
+
+            // Check the handshake message
             String handshakeMessage = b2s(handshake);
             if(!handshakeMessage.equals(HANDSHAKE_MESSAGE)){
                 logger.log(Level.WARNING, "Invalid handshake message - " + handshakeMessage);
                 return; // Kill connection
             }
-
-            // Reset timeout
-            clntSock.setSoTimeout(TIMEOUT);
 
             // Loop until IOException breaks out
             while (true) {
@@ -91,11 +90,9 @@ public class ShiipServerProtocol implements Runnable {
                 // Attempt to retrieve the first frame
                 Message m = getMessage(deframer, decoder);
 
-                // If we have read in data then reset our timeout
-                clntSock.setSoTimeout(TIMEOUT);
-
                 // If m is not null then we read a valid frame
                 if (m != null) {
+
                     switch (m.getCode()) {
                         case Constants.DATA_TYPE:
                             handleData(m);
@@ -116,10 +113,12 @@ public class ShiipServerProtocol implements Runnable {
         } catch (IOException ex) {
             // This block should only trigger if an IOException is thrown meaning
             // the client has disconnected or a timeout has occurred
-        } catch (BadAttributeException ex){
+        } catch (Exception ex){
             logger.log(Level.SEVERE, ex.getMessage());
             // Socket should auto-close
             // Connection is killed
+        } finally {
+            System.out.println("Closing client");
         }
     }
 
@@ -132,7 +131,7 @@ public class ShiipServerProtocol implements Runnable {
         try {
             byte[] framedBytes = deframer.getFrame();
             return Message.decode(framedBytes, decoder);
-        } catch (IllegalArgumentException | EOFException e) {
+        } catch (IllegalArgumentException e) {
             logger.log(Level.WARNING, "Unable to parse: " + e.getMessage());
         } catch (BadAttributeException | NullPointerException e) {
             logger.log(Level.WARNING, "Invalid Message: " + e.getMessage());
@@ -144,7 +143,7 @@ public class ShiipServerProtocol implements Runnable {
     /**
      * Handler for a Headers message
      *  @param m the Headers message
-     * @param encoder
+     * @param encoder encoder to send Headers
      * @param streamIDs a list of seen streamIDs
      */
     private void handleHeaders(Message m, Framer framer, Encoder encoder, List<Integer> streamIDs) throws BadAttributeException, IOException{
@@ -169,7 +168,7 @@ public class ShiipServerProtocol implements Runnable {
             headers.addValue(STATUS_KEY, "404 File not found");
             framer.putFrame(headers.encode(encoder));
 
-            return; // terminate stream
+            return; // Terminate stream
         }
 
         String filePath = documentRoot.concat(path);

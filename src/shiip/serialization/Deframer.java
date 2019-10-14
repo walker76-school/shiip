@@ -48,9 +48,6 @@ public class Deframer {
         // Read the length in from the InputStream
         byte[] lengthBuffer = new byte[Constants.LENGTH_BYTES];
         int bytesRead = in.readNBytes(lengthBuffer, 0, Constants.LENGTH_BYTES);
-        if(bytesRead <= 0){
-            throw new IOException();
-        }
 
         if(bytesRead != Constants.LENGTH_BYTES){
             throw new EOFException("EOF reached before payload length read - " + bytesRead);
