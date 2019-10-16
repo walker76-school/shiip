@@ -4,3 +4,6 @@ out/
 *.zip
 doc*/
 mykeystore
+*.html
+*.js
+*.css
