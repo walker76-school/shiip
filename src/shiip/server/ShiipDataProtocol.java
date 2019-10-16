@@ -1,15 +1,25 @@
+/*******************************************************
+ * Author: Andrew walker
+ * Assignment: Prog 3
+ * Class: Data Comm
+ *******************************************************/
+
 package shiip.server;
 
 import shiip.serialization.*;
 
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static shiip.server.Server.MAXDATASIZE;
 import static shiip.server.Server.MINDATAINTERVAL;
 
+/**
+ * Protocol for serving a file
+ *
+ * @author Andrew Walker
+ */
 public class ShiipDataProtocol implements Runnable {
 
     private final Framer framer;
@@ -17,6 +27,13 @@ public class ShiipDataProtocol implements Runnable {
     private final int streamID;
     private final String filePath;
 
+    /**
+     * Constructor for a new Data Protocol
+     * @param framer the Framer for sending frames
+     * @param streamID the stream to serve the file on
+     * @param filePath the file to server
+     * @param logger logger
+     */
     public ShiipDataProtocol(Framer framer, Integer streamID, String filePath, Logger logger) {
         this.framer = framer;
         this.logger = logger;
@@ -52,7 +69,7 @@ public class ShiipDataProtocol implements Runnable {
             Data data = new Data(streamID, true, new byte[]{});
             framer.putFrame(data.encode(null));
 
-        } catch (IOException | BadAttributeException | InterruptedException e) {
+        } catch (Exception e) {
             logger.log(Level.SEVERE, e.getMessage());
             // Stream is closed
         }

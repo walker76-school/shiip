@@ -1,3 +1,9 @@
+/*******************************************************
+ * Author: Andrew walker
+ * Assignment: Prog 3
+ * Class: Data Comm
+ *******************************************************/
+
 package shiip.server;
 
 import tls.TLSFactory;
@@ -11,6 +17,11 @@ import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * SHiiP server for serving files to a client
+ *
+ * @author Andrew Walker
+ */
 public class Server {
 
     public static final int MAXDATASIZE = 16384;
@@ -57,6 +68,12 @@ public class Server {
         }
     }
 
+    /**
+     * Initializes the thread pool
+     * @param threadCountS the number of threads in the pool
+     * @param logger logger
+     * @return initialized ExecutorService
+     */
     private static ExecutorService initThreadPool(String threadCountS, Logger logger) {
         int threadCount;
         try {

@@ -1,3 +1,9 @@
+/*******************************************************
+ * Author: Andrew walker
+ * Assignment: Prog 3
+ * Class: Data Comm
+ *******************************************************/
+
 package shiip.server;
 
 import com.twitter.hpack.Decoder;
@@ -17,6 +23,11 @@ import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Protocol for handling a client connection
+ *
+ * @author Andrew Walker
+ */
 public class ShiipServerProtocol implements Runnable {
 
     // Table size for Encoder and Decoder
@@ -45,6 +56,12 @@ public class ShiipServerProtocol implements Runnable {
     private final Logger logger;
     private final ExecutorService pool;
 
+    /**
+     * Constructor for new Server protocol
+     * @param clntSock the socket the client is connected on
+     * @param documentRoot the root to find files
+     * @param logger logger
+     */
     public ShiipServerProtocol(Socket clntSock, String documentRoot, Logger logger) {
         this.clntSock = clntSock;
         this.documentRoot = documentRoot;
@@ -117,8 +134,6 @@ public class ShiipServerProtocol implements Runnable {
             logger.log(Level.SEVERE, ex.getMessage());
             // Socket should auto-close
             // Connection is killed
-        } finally {
-            System.out.println("Closing client");
         }
     }
 
@@ -154,8 +169,17 @@ public class ShiipServerProtocol implements Runnable {
             logger.log(Level.WARNING, "Duplicate request: " + h);
         }
 
+        // Check that the streamIDs are increasing
+        int maxPreviousStreamID = 0;
+        for(int previousStreamID : streamIDs){
+            if(previousStreamID > maxPreviousStreamID){
+                maxPreviousStreamID = previousStreamID;
+            }
+        }
+        boolean increasing = streamID > maxPreviousStreamID;
+
         // If it's even then it's illegal
-        if(streamID % 2 == 0){
+        if(streamID % 2 == 0 || !increasing){
             logger.log(Level.WARNING, "Illegal stream ID: " + h);
         }
 
@@ -236,6 +260,11 @@ public class ShiipServerProtocol implements Runnable {
         logger.log(Level.INFO, "Received message: " + m);
     }
 
+    /**
+     * Turns a byte array into a string representation
+     * @param b the byte array to transform
+     * @return a string representation of the byte array
+     */
     private static String b2s(byte[] b) {
         return new String(b, ENC);
     }
