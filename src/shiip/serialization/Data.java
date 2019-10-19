@@ -126,7 +126,7 @@ public final class Data extends Message {
 
     /**
      * Serializes message
-     * @param encoder encoder for serialization. Ignored (so can be null) if not
+     * @param encoder encoder for jack.serialization. Ignored (so can be null) if not
      *                needed (determined by and specified in specific
      *                message type)
      * @throws NullPointerException if encoder is null + needed

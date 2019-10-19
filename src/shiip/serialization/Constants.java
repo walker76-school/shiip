@@ -7,7 +7,7 @@
 package shiip.serialization;
 
 /**
- * Holds constant values used for serialization and deserialization
+ * Holds constant values used for jack.serialization and deserialization
  * by the Framer and Deframer
  *
  * @author Andrew Walker
