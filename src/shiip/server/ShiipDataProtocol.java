@@ -48,21 +48,14 @@ public class ShiipDataProtocol implements Runnable {
             byte[] buffer = new byte[MAXDATASIZE];
             FileInputStream in = new FileInputStream(filePath);
 
-            long currentTime = System.currentTimeMillis();
             while(in.read(buffer, 0, MAXDATASIZE) != -1){
-
-                // Wait the full interval before sending
-                while(System.currentTimeMillis() - currentTime < MINDATAINTERVAL){
-                    // Do nothing but sleep
-                    Thread.sleep(MINDATAINTERVAL);
-                }
 
                 // Send the Data frame
                 Data data = new Data(streamID, false, buffer);
                 framer.putFrame(data.encode(null));
 
-                // Reset the waiting interval
-                currentTime = System.currentTimeMillis();
+                // Sleep for the interval
+                Thread.sleep(MINDATAINTERVAL);
             }
 
             // Send final data frame to show isEnd
@@ -70,7 +63,7 @@ public class ShiipDataProtocol implements Runnable {
             framer.putFrame(data.encode(null));
 
         } catch (Exception e) {
-            logger.log(Level.SEVERE, e.getMessage());
+            logger.log(Level.WARNING, e.getMessage());
             // Stream is closed
         }
     }

@@ -48,6 +48,12 @@ public class ShiipServerProtocol implements Runnable {
     // Encoding for handshake message
     private static final Charset ENC = StandardCharsets.US_ASCII;
 
+    // StreamID for the connection
+    private static final int CONNECTION_STREAMID = 0;
+
+    // Maximum sized payload for a frame
+    public static final int MAX_INCREMENT = 16384;
+
     // Initial HTTP handshake message
     private static final String HANDSHAKE_MESSAGE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
 
@@ -97,9 +103,15 @@ public class ShiipServerProtocol implements Runnable {
             // Check the handshake message
             String handshakeMessage = b2s(handshake);
             if(!handshakeMessage.equals(HANDSHAKE_MESSAGE)){
-                logger.log(Level.WARNING, "Invalid handshake message - " + handshakeMessage);
+                logger.log(Level.WARNING, "Bad preface: " + handshakeMessage);
                 return; // Kill connection
             }
+
+            Settings settings = new Settings();
+            Window_Update wu = new Window_Update(CONNECTION_STREAMID, MAX_INCREMENT);
+
+            framer.putFrame(settings.encode(null));
+            framer.putFrame(wu.encode(null));
 
             // Loop until IOException breaks out
             while (true) {
@@ -165,6 +177,8 @@ public class ShiipServerProtocol implements Runnable {
         Headers h = (Headers) m;
 
         int streamID = h.getStreamID();
+
+        // Duplicate stream ID
         if(streamIDs.contains(streamID)){
             logger.log(Level.WARNING, "Duplicate request: " + h);
         }
@@ -183,13 +197,14 @@ public class ShiipServerProtocol implements Runnable {
             logger.log(Level.WARNING, "Illegal stream ID: " + h);
         }
 
+        // No or bad path specified
         String path = h.getValue(PATH_KEY);
         if(path == null){
-            logger.log(Level.WARNING, "No path specified");
+            logger.log(Level.WARNING, "No or bad path");
 
             // Send headers
             Headers headers = new Headers(streamID, false);
-            headers.addValue(STATUS_KEY, "404 File not found");
+            headers.addValue(STATUS_KEY, "404 No or bad path");
             framer.putFrame(headers.encode(encoder));
 
             return; // Terminate stream
@@ -198,8 +213,21 @@ public class ShiipServerProtocol implements Runnable {
         String filePath = documentRoot.concat(path);
         File file = new File(filePath);
 
+        // Directory
+        if(file.isDirectory()){
+            logger.log(Level.WARNING, "Cannot request directory");
+
+            // Send headers
+            Headers headers = new Headers(streamID, false);
+            headers.addValue(STATUS_KEY, "404 Cannot request directory");
+            framer.putFrame(headers.encode(encoder));
+
+            return; // Terminate stream
+        }
+
+        // Non-existent/No permission file
         if(!file.exists() || !Files.isReadable(Paths.get(filePath))){
-            logger.log(Level.WARNING, "Unable to open file: " + file);
+            logger.log(Level.WARNING, "File not found");
 
             // Send headers
             Headers headers = new Headers(streamID, false);
@@ -208,17 +236,6 @@ public class ShiipServerProtocol implements Runnable {
 
             return; // Terminate stream
 
-        }
-
-        if(file.isDirectory()){
-            logger.log(Level.WARNING, "Cannot request directory: " + file);
-
-            // Send headers
-            Headers headers = new Headers(streamID, false);
-            headers.addValue(STATUS_KEY, "404 Cannot request directory");
-            framer.putFrame(headers.encode(encoder));
-
-            return; // Terminate stream
         }
 
         // Record the streamID
@@ -229,8 +246,6 @@ public class ShiipServerProtocol implements Runnable {
         framer.putFrame(headers.encode(encoder));
 
         pool.execute(new ShiipDataProtocol(framer, streamID, filePath, logger));
-
-
     }
 
     /**
@@ -239,7 +254,7 @@ public class ShiipServerProtocol implements Runnable {
      * @param m the Data message
      */
     private void handleData(Message m) {
-        logger.log(Level.WARNING, "Invalid message: " + m);
+        logger.log(Level.WARNING, "Unexpected message: " + m);
     }
 
     /**
