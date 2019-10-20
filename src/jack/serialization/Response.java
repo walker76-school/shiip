@@ -91,6 +91,6 @@ public class Response extends Message {
 
     @Override
     public String getOperation() {
-        return "Response";
+        return "R";
     }
 }

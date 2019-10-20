@@ -114,6 +114,6 @@ public class ACK extends Message {
 
     @Override
     public String getOperation() {
-        return "ACK";
+        return "A";
     }
 }

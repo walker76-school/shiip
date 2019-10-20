@@ -77,6 +77,6 @@ public class Query extends Message {
 
     @Override
     public String getOperation() {
-        return "Query";
+        return "Q";
     }
 }

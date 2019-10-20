@@ -73,6 +73,6 @@ public class Error extends Message {
 
     @Override
     public String getOperation() {
-        return "Error";
+        return "E";
     }
 }

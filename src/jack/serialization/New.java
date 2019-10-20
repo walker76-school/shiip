@@ -111,6 +111,6 @@ public class New extends Message{
 
     @Override
     public String getOperation() {
-        return "New";
+        return "N";
     }
 }
