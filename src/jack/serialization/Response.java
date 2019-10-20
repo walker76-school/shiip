@@ -24,6 +24,29 @@ public class Response extends Message {
     }
 
     /**
+     * Creates a Response message from a given byte array
+     * @param msgBytes byte array
+     */
+    public Response(byte[] msgBytes) throws IllegalArgumentException {
+        String message = new String(msgBytes, ENC);
+        String[] tokens = message.split(" ");
+        if(tokens.length < 2){
+            throw new IllegalArgumentException("Invalid message");
+        }
+
+        serviceList = new ArrayList<>();
+        for(int i = 1; i < tokens.length; i++){
+            String hostAndPort = tokens[i];
+
+            if(!hostAndPort.matches("[a-z|A-Z]:[a-z|A-Z]")){
+                throw new IllegalArgumentException("Invalid service - " + hostAndPort);
+            }
+
+            serviceList.add(hostAndPort);
+        }
+    }
+
+    /**
      * Get the service (string representation) list where each service is
      * represented as name:port space (e.g., google:8000)
      *

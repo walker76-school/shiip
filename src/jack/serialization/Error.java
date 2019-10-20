@@ -19,6 +19,22 @@ public class Error extends Message {
     }
 
     /**
+     * Creates a Error message from a given byte array
+     * @param msgBytes byte array
+     * @throws IllegalArgumentException if any validation problem with errorMessage, including null, etc.
+     */
+    public Error(byte[] msgBytes) throws IllegalArgumentException {
+        String message = new String(msgBytes, ENC);
+        String[] tokens = message.split(" ");
+        if(tokens.length != 2){
+            throw new IllegalArgumentException("Invalid error message");
+        }
+
+        String errorMessage = tokens[1];
+        setErrorMessage(errorMessage);
+    }
+
+    /**
      * Get error message
      * @return error message
      */

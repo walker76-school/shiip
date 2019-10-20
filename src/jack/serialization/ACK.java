@@ -24,6 +24,36 @@ public class ACK extends Message {
     }
 
     /**
+     * Creates a ACK message from a given byte array
+     * @param msgBytes byte array
+     * @throws IllegalArgumentException if any validation problem with host and/or port, including null, etc.
+     */
+    public ACK(byte[] msgBytes) throws IllegalArgumentException {
+        String message = new String(msgBytes, ENC);
+        String[] tokens = message.split(" ");
+        if(tokens.length != 2){
+            throw new IllegalArgumentException("Invalid message");
+        }
+
+        String hostAndPort = tokens[1];
+        String[] serviceTokens = hostAndPort.split(":");
+        if(serviceTokens.length != 2){
+            throw new IllegalArgumentException("Invalid service");
+        }
+        String host = serviceTokens[0];
+        setHost(host);
+
+        try{
+            String portString = serviceTokens[1];
+            int port = Integer.parseInt(portString);
+            setPort(port);
+        } catch (NumberFormatException e){
+            throw new IllegalArgumentException("Invalid port", e);
+        }
+
+    }
+
+    /**
      * Returns string of the form
      * ACK [name:port]
      *

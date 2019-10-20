@@ -1,5 +1,8 @@
 package jack.serialization;
 
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+
 /**
  * Query message
  *
@@ -15,6 +18,22 @@ public class Query extends Message {
      * @throws IllegalArgumentException if any validation problem with searchString, including null, etc.
      */
     public Query(String searchString) throws IllegalArgumentException {
+        setSearchString(searchString);
+    }
+
+    /**
+     * Creates a Query message from a given byte array
+     * @param msgBytes byte array
+     * @throws IllegalArgumentException if any validation problem with searchString, including null, etc.
+     */
+    public Query(byte[] msgBytes) throws IllegalArgumentException {
+        String message = new String(msgBytes, ENC);
+        String[] tokens = message.split(" ");
+        if(tokens.length != 2){
+            throw new IllegalArgumentException("Invalid search string");
+        }
+
+        String searchString = tokens[1];
         setSearchString(searchString);
     }
 
