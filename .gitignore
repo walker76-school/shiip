@@ -7,3 +7,4 @@ mykeystore
 *.html
 *.js
 *.css
+*.log*

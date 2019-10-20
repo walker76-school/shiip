@@ -16,6 +16,7 @@ import java.util.concurrent.Executors;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 /**
  * SHiiP server for serving files to a client
@@ -32,7 +33,9 @@ public class Server {
         // Establish Logger
         Logger logger = Logger.getLogger("ShiipServer");
         try {
-            logger.addHandler(new FileHandler("/output.log"));
+            FileHandler handler = new FileHandler("./connections.log");
+            handler.setFormatter(new SimpleFormatter());
+            logger.addHandler(handler);
         } catch (IOException e){
             logger.log(Level.WARNING, e.getMessage());
             return;
