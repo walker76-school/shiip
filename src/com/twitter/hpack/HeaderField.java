@@ -92,4 +92,9 @@ class HeaderField implements Comparable<HeaderField> {
     String valueString = new String(value);
     return nameString + ": " + valueString;
   }
+
+  @Override
+  public int hashCode() {
+    return super.hashCode();
+  }
 }

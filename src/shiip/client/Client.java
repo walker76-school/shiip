@@ -15,6 +15,7 @@ import java.io.OutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -92,7 +93,9 @@ public class Client {
 
         } catch (NumberFormatException e){
             System.err.println("Usage: Client [host] [port] [paths...]");
-        } catch(Exception e){
+        } catch(UnknownHostException e){
+            System.err.println("Bad server name: " + host);
+        } catch (Exception e){
             System.err.println(e.getMessage());
         }
     }
