@@ -139,7 +139,9 @@ public class ShiipServerProtocol implements Runnable {
                 }
             }
 
-        } catch (Exception ex){
+        } catch(IOException e){
+            logger.log(Level.INFO, "Client has closed");
+        } catch(Exception ex){
             logger.log(Level.SEVERE, ex.getMessage());
             // Socket should auto-close
             // Connection is killed
@@ -238,6 +240,7 @@ public class ShiipServerProtocol implements Runnable {
         // Record the streamID
         streamIDs.add(streamID);
 
+        // Send good headers
         Headers headers = new Headers(streamID, false);
         headers.addValue(STATUS_KEY, "200 OK");
         framer.putFrame(headers.encode(encoder));

@@ -42,7 +42,7 @@ public class Client {
     private static final int PAYLOAD_NDX = 3;
 
     // Max length of message
-    private static final int MAX_LENGTH = 2000;
+    private static final int MAX_LENGTH = 65507;
 
     public static void main(String[] args) {
         if(args.length < MIN_ARGS){

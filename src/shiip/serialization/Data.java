@@ -6,6 +6,7 @@
 
 package shiip.serialization;
 
+import com.twitter.hpack.Decoder;
 import com.twitter.hpack.Encoder;
 
 import java.nio.ByteBuffer;
@@ -31,42 +32,34 @@ public final class Data extends Message {
      * @param data bytes of application data
      * @throws BadAttributeException if attribute invalid (set protocol spec)
      */
-    public Data(int streamID, boolean isEnd, byte[] data)
-                                                throws BadAttributeException {
+    public Data(int streamID, boolean isEnd, byte[] data) throws BadAttributeException {
         setStreamID(streamID);
         this.isEnd = isEnd;
         setData(data);
     }
 
     /**
-     * Creates Data message from given byte array
-     * @param msgBytes encoded Data
-     * @throws BadAttributeException if attribute invalid (set protocol spec)
+     * Constructs a Data from a byte array
+     * @param buffer encoded Data
+     * @throws BadAttributeException if attribute invalid (see protocol spec)
      */
-    protected Data(byte[] msgBytes) throws BadAttributeException {
-        ByteBuffer buffer = ByteBuffer.wrap(msgBytes);
+    public Data(ByteBuffer buffer) throws BadAttributeException {
+        setup(buffer, null);
+    }
 
-        // Throw away type
-        buffer.get();
-
-        byte flags = buffer.get();
-        int rAndStreamID = buffer.getInt();
-        int streamID = rAndStreamID & Constants.STREAM_ID_MASK;
-        setStreamID(streamID);
-
-        // Retrieve the remaining data
-        int payloadLength = buffer.remaining();
-        byte[] payload = new byte[payloadLength];
-        buffer.get(payload);
-        setData(payload);
-
+    @Override
+    protected void handleFlags(byte flags) throws BadAttributeException {
         // Check for errors
         if((flags & ERROR_BIT) != 0){
             throw new BadAttributeException("Error bit is set", "flags");
         }
-
         // Retrieve isEnd from the flags
         this.isEnd = (flags & IS_END_BIT) != 0;
+    }
+
+    @Override
+    protected void handlePayload(byte[] payload, Decoder decoder) throws BadAttributeException{
+        setData(payload);
     }
 
     /**
@@ -124,29 +117,19 @@ public final class Data extends Message {
         this.isEnd = end;
     }
 
-    /**
-     * Serializes message
-     * @param encoder encoder for jack.serialization. Ignored (so can be null) if not
-     *                needed (determined by and specified in specific
-     *                message type)
-     * @throws NullPointerException if encoder is null + needed
-     * @return serialized message
-     */
-    @Override
-    public byte[] encode(Encoder encoder) {
-        ByteBuffer buffer = ByteBuffer.allocate(Constants.HEADER_BYTES
-                                                    + this.data.length);
-
-        buffer.put(Constants.DATA_TYPE);
-        buffer.put(isEnd ? (FLAGS | IS_END_BIT) : FLAGS);
-        buffer.putInt(streamID & Constants.STREAM_ID_MASK);
-        buffer.put(data);
-        return buffer.array();
-    }
-
     @Override
     public byte getCode() {
         return Constants.DATA_TYPE;
+    }
+
+    @Override
+    protected byte getEncodedFlags() {
+        return isEnd ? (FLAGS | IS_END_BIT) : FLAGS;
+    }
+
+    @Override
+    protected byte[] getEncodedData(Encoder encoder) {
+        return data;
     }
 
     @Override

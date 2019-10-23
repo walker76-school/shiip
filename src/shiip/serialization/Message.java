@@ -31,8 +31,7 @@ public abstract class Message {
      * @throws BadAttributeException if validation failure
      * @return specific Message resulting from deserialization
      */
-    public static Message decode(byte[] msgBytes, Decoder decoder)
-                                                throws BadAttributeException {
+    public static Message decode(byte[] msgBytes, Decoder decoder) throws BadAttributeException {
         Objects.requireNonNull(msgBytes, "msgBytes cannot be null");
 
         // Check for a valid length header
@@ -44,12 +43,50 @@ public abstract class Message {
         // Get type and pass of decoding
         byte type = buffer.get();
         switch(type){
-            case Constants.DATA_TYPE: return new Data(msgBytes);
-            case Constants.HEADERS_TYPE:  return new Headers(msgBytes, decoder);
-            case Constants.SETTINGS_TYPE: return new Settings(msgBytes);
-            case Constants.WINDOW_UPDATE_TYPE: return new Window_Update(msgBytes);
+            case Constants.DATA_TYPE: return new Data(buffer);
+            case Constants.HEADERS_TYPE:  return new Headers(buffer, decoder);
+            case Constants.SETTINGS_TYPE: return new Settings(buffer);
+            case Constants.WINDOW_UPDATE_TYPE: return new Window_Update(buffer);
             default: throw new BadAttributeException("Invalid type - " + type, "code");
         }
+    }
+
+    /**
+     * Extracts the parts of a message
+     * @param buffer the encoded message
+     * @param decoder decoder for headers
+     * @throws BadAttributeException if validation failure
+     */
+    protected final void setup(ByteBuffer buffer, Decoder decoder) throws BadAttributeException {
+        byte flags = buffer.get();
+        handleFlags(flags);
+        int rAndStreamID = buffer.getInt();
+        int streamID = rAndStreamID & Constants.STREAM_ID_MASK;
+        setStreamID(streamID);
+        // Retrieve the remaining data
+        int payloadLength = buffer.remaining();
+        byte[] payload = new byte[payloadLength];
+        buffer.get(payload);
+        handlePayload(payload, decoder);
+    }
+
+    /**
+     * Handler method for flags
+     * @param flags flags
+     * @throws BadAttributeException if invalid
+     */
+    protected void handleFlags(byte flags) throws BadAttributeException {
+        // Do nothing by default
+    }
+
+    /**
+     * Handler method for payload
+     * @param payload the payload
+     * @param decoder decoder for headers
+     * @throws BadAttributeException if invalid
+     */
+    protected void handlePayload(byte[] payload, Decoder decoder) throws BadAttributeException {
+        // Do nothing default
     }
 
     /**
@@ -60,7 +97,15 @@ public abstract class Message {
      * @throws NullPointerException if encoder is null + needed
      * @return serialized message
      */
-    public abstract byte[] encode(Encoder encoder);
+    public final byte[] encode(Encoder encoder){
+        byte[] data = getEncodedData(encoder);
+        ByteBuffer buffer = ByteBuffer.allocate(Constants.HEADER_BYTES + data.length);
+        buffer.put(getCode());
+        buffer.put(getEncodedFlags());
+        buffer.putInt(streamID & Constants.STREAM_ID_MASK);
+        buffer.put(data);
+        return buffer.array();
+    }
 
     /**
      * Returns type code for message
@@ -69,10 +114,23 @@ public abstract class Message {
     public abstract byte getCode();
 
     /**
+     * Returns the flags for the message
+     * @return flags
+     */
+    protected abstract byte getEncodedFlags();
+
+    /**
+     * Returns the encoded data for the message
+     * @param encoder for encoding headers
+     * @return the encoded data
+     */
+    protected abstract byte[] getEncodedData(Encoder encoder);
+
+    /**
      * Returns the stream ID
      * @return stream ID
      */
-    public int getStreamID(){
+    public final int getStreamID(){
         return this.streamID;
     }
 

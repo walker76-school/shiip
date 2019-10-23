@@ -28,30 +28,11 @@ public final class Settings extends Message {
 
     /**
      * Creates Settings message from byte array
-     * @param msgBytes encoded Settings
+     * @param buffer encoded Settings
      * @throws BadAttributeException if attribute invalid (not thrown in this case)
      */
-    protected Settings(byte[] msgBytes) throws BadAttributeException {
-        ByteBuffer buffer = ByteBuffer.wrap(msgBytes);
-        // Throw away type and flags
-        buffer.getShort();
-        int rAndStreamID = buffer.getInt();
-        int streamID = rAndStreamID & Constants.STREAM_ID_MASK;
-        int payloadLength = buffer.remaining();
-        // Retrieve the remaining data
-        byte[] payload = new byte[payloadLength];
-        buffer.get(payload);
-
-        setStreamID(streamID);
-    }
-
-    /**
-     * Returns the stream ID
-     * @return stream ID
-     */
-    @Override
-    public int getStreamID() {
-        return 0;
+    protected Settings(ByteBuffer buffer) throws BadAttributeException {
+        setup(buffer, null);
     }
 
     /**
@@ -69,26 +50,19 @@ public final class Settings extends Message {
         this.streamID = streamID;
     }
 
-    /**
-     * Serializes message
-     * @param encoder encoder for jack.serialization. Ignored (so can be null) if not
-     *                needed (determined by and specified in specific
-     *                message type)
-     * @throws NullPointerException if encoder is null + needed
-     * @return serialized message
-     */
-    @Override
-    public byte[] encode(Encoder encoder) {
-        ByteBuffer buffer = ByteBuffer.allocate(Constants.HEADER_BYTES);
-        buffer.put(Constants.SETTINGS_TYPE);
-        buffer.put(FLAGS);
-        buffer.putInt(this.streamID & Constants.STREAM_ID_MASK);
-        return buffer.array();
-    }
-
     @Override
     public byte getCode() {
         return Constants.SETTINGS_TYPE;
+    }
+
+    @Override
+    protected byte getEncodedFlags() {
+        return FLAGS;
+    }
+
+    @Override
+    protected byte[] getEncodedData(Encoder encoder) {
+        return new byte[0];
     }
 
     /**
@@ -102,5 +76,4 @@ public final class Settings extends Message {
     public String toString() {
         return "Settings: StreamID=0";
     }
-
 }

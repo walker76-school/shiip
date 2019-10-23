@@ -27,12 +27,32 @@ import java.util.*;
  */
 public final class Headers extends Message {
 
+    // Encoding for strings in header
     private static final Charset CHARENC = StandardCharsets.US_ASCII;
+
+    // Location of bit for first error flag
     private static final byte ERROR_FLAG_A = 0x8;
+
+    // Location of bit for second error flag
     private static final byte ERROR_FLAG_B = 0x20;
+
+    // Location of bit that must be set
     private static final byte SET_BIT = 0x4;
+
+    // Flags for Headers
     private static final byte FLAGS = 0x4;
+
+    // Location of bit for isEnd
     private static final byte IS_END_BIT = 0x1;
+
+    // Lower bound of acceptable chars
+    private static final byte LOWER_BOUND = 0x20;
+
+    // Upper bound of acceptable chars
+    private static final byte UPPER_BOUND = 0x7E;
+
+    // Acceptable char for value
+    private static final byte EXCEPTION_CHAR = 0x9;
 
     private boolean isEnd;
     private Map<String, String> headerValues;
@@ -51,39 +71,30 @@ public final class Headers extends Message {
 
     /**
      * Creates Headers message from a byte array
-     * @param msgBytes the encoded Headers
+     * @param buffer the encoded Headers
      * @param decoder the deocder for the Headers headers
      * @throws BadAttributeException  if attribute invalid (see protocol spec)
      */
-    protected Headers(byte[] msgBytes, Decoder decoder) throws BadAttributeException {
-        Objects.requireNonNull(decoder, "Decoder cannot be null");
+    protected Headers(ByteBuffer buffer, Decoder decoder) throws BadAttributeException {
+        setup(buffer, decoder);
+    }
 
-        ByteBuffer buffer = ByteBuffer.wrap(msgBytes);
-        // Throw away type
-        buffer.get();
-        byte flags = buffer.get();
-
-        int rAndStreamID = buffer.getInt();
-        int streamID = rAndStreamID & Constants.STREAM_ID_MASK;
-        setStreamID(streamID);
-
-        // Retrieve the remaining data
-        int payloadLength = buffer.remaining();
-        byte[] payload = new byte[payloadLength];
-        buffer.get(payload);
-
+    @Override
+    protected void handleFlags(byte flags) throws BadAttributeException {
         // Check for errors
         if((flags & ERROR_FLAG_A) != 0x0 || (flags & ERROR_FLAG_B) != 0x0){
             throw new BadAttributeException("Error bit is set", "flags");
         }
-
         if((flags & SET_BIT) == 0x0){
             throw new BadAttributeException("Bit is not set in flags", "flags");
         }
-
         // Retrieve isEnd from the flags
         isEnd = (flags & IS_END_BIT) != 0;
+    }
 
+    @Override
+    protected void handlePayload(byte[] payload, Decoder decoder) throws BadAttributeException {
+        Objects.requireNonNull(decoder, "Decoder cannot be null");
         Map<String, String> headerValues = new TreeMap<>();
         ByteArrayInputStream in = new ByteArrayInputStream(payload);
         try {
@@ -99,31 +110,6 @@ public final class Headers extends Message {
         for(Map.Entry<String, String> entry : headerValues.entrySet()){
             addValue(entry.getKey(), entry.getValue());
         }
-    }
-
-    @Override
-    public byte[] encode(Encoder encoder) {
-        Objects.requireNonNull(encoder);
-
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        for(Map.Entry<String, String> entry : headerValues.entrySet()) {
-            try {
-                encoder.encodeHeader(out, entry.getKey().getBytes(),
-                                            entry.getValue().getBytes(),
-                                        false);
-            } catch (IOException e) {
-                System.err.println(e.getMessage());
-            }
-        }
-        byte[] compressedHeaders = out.toByteArray();
-
-        ByteBuffer buffer = ByteBuffer.allocate(Constants.HEADER_BYTES + compressedHeaders.length);
-        buffer.put(Constants.HEADERS_TYPE);
-        buffer.put(isEnd ? (FLAGS | IS_END_BIT) : FLAGS);
-        buffer.putInt(streamID & Constants.STREAM_ID_MASK);
-        buffer.put(compressedHeaders);
-        return buffer.array();
-
     }
 
     /**
@@ -148,6 +134,28 @@ public final class Headers extends Message {
     }
 
     @Override
+    protected byte getEncodedFlags() {
+        return isEnd ? (FLAGS | IS_END_BIT) : FLAGS;
+    }
+
+    @Override
+    protected byte[] getEncodedData(Encoder encoder) {
+        Objects.requireNonNull(encoder);
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        for(Map.Entry<String, String> entry : headerValues.entrySet()) {
+            try {
+                encoder.encodeHeader(out, entry.getKey().getBytes(),
+                        entry.getValue().getBytes(),
+                        false);
+            } catch (IOException e) {
+                System.err.println(e.getMessage());
+            }
+        }
+        return out.toByteArray();
+    }
+
+    @Override
     public void setStreamID(int streamID) throws BadAttributeException {
         if(streamID <= 0){
             throw new BadAttributeException("StreamID must be a positive integer", "streamID");
@@ -162,6 +170,7 @@ public final class Headers extends Message {
      *
      * Headers: StreamID=5 isEnd=false ([method=GET][color=blue])
      */
+    @Override
     public String toString(){
         StringBuilder builder = new StringBuilder();
         builder.append(String.format("Headers: StreamID=%d isEnd=%b (",
@@ -218,11 +227,7 @@ public final class Headers extends Message {
      */
     private boolean isValidName(String name){
 
-        if(name == null){
-            return false;
-        }
-
-        if(name.length() < 1){
+        if(name == null || name.isEmpty()){
             return false;
         }
 
@@ -233,7 +238,7 @@ public final class Headers extends Message {
                 return false;
             }
 
-            if (!(c >= 0x20 && c <= 0x7E) ){
+            if (!(c >= LOWER_BOUND && c <= UPPER_BOUND) ){
                 return false;
             }
         }
@@ -248,16 +253,12 @@ public final class Headers extends Message {
      */
     private boolean isValidValue(String value){
 
-        if(value == null){
-            return false;
-        }
-
-        if(value.length() < 1){
+        if(value == null || value.isEmpty()){
             return false;
         }
 
         for(char c : value.toCharArray()){
-            if (c != 0x9 && !(c >= 0x20 && c <= 0x7E) ){
+            if (c != EXCEPTION_CHAR && !(c >= LOWER_BOUND && c <= UPPER_BOUND) ){
                 return false;
             }
         }

@@ -6,6 +6,7 @@
 
 package shiip.serialization;
 
+import com.twitter.hpack.Decoder;
 import com.twitter.hpack.Encoder;
 
 import java.nio.ByteBuffer;
@@ -35,25 +36,21 @@ public final class Window_Update extends Message {
 
     /**
      * Creates Window_Update message from byte array
-     * @param msgBytes encoded Window_Update
+     * @param buffer encoded Window_Update
      * @throws BadAttributeException if attribute invalid (set protocol spec)
      */
-    protected Window_Update(byte[] msgBytes) throws BadAttributeException {
-        ByteBuffer buffer = ByteBuffer.wrap(msgBytes);
+    protected Window_Update(ByteBuffer buffer) throws BadAttributeException {
+        setup(buffer, null);
+    }
 
-        // Throw away type and flags
-        buffer.getShort();
-
-        int rAndStreamID = buffer.getInt();
-        int streamID = rAndStreamID & Constants.STREAM_ID_MASK;
-        setStreamID(streamID);
-
+    @Override
+    protected void handlePayload(byte[] payload, Decoder decoder) throws BadAttributeException {
+        ByteBuffer buffer = ByteBuffer.wrap(payload);
         int payloadLength = buffer.remaining();
 
         // Check for valid length frame
         if(payloadLength != PAYLOAD_LENGTH){
-            throw new BadAttributeException("Payload should be length 4",
-                    "payload");
+            throw new BadAttributeException("Payload should be length 4", "payload");
         }
 
         // Get the payload and extract increment
@@ -97,27 +94,24 @@ public final class Window_Update extends Message {
         this.increment = increment;
     }
 
-    /**
-     * Serializes message
-     * @param encoder encoder for jack.serialization. Ignored (so can be null) if not
-     *                needed (determined by and specified in specific
-     *                message type)
-     * @throws NullPointerException if encoder is null + needed
-     * @return serialized message
-     */
-    @Override
-    public byte[] encode(Encoder encoder) {
-        ByteBuffer buffer = ByteBuffer.allocate(Constants.HEADER_BYTES + PAYLOAD_LENGTH);
-        buffer.put(Constants.WINDOW_UPDATE_TYPE);
-        buffer.put(FLAGS);
-        buffer.putInt(this.streamID & Constants.STREAM_ID_MASK);
-        buffer.putInt(this.increment & Constants.STREAM_ID_MASK);
-        return buffer.array();
-    }
-
     @Override
     public byte getCode() {
         return Constants.WINDOW_UPDATE_TYPE;
+    }
+
+    @Override
+    protected byte getEncodedFlags() {
+        return FLAGS;
+    }
+
+    @Override
+    protected byte[] getEncodedData(Encoder encoder) {
+        int encodedIncrement = this.increment & Constants.STREAM_ID_MASK;
+        return new byte[] {
+                (byte) (encodedIncrement >>> 24),
+                (byte) (encodedIncrement >>> 16),
+                (byte) (encodedIncrement >>> 8),
+                (byte) encodedIncrement};
     }
 
     @Override
