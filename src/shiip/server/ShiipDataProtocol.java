@@ -48,6 +48,7 @@ public class ShiipDataProtocol implements Runnable {
             byte[] buffer = new byte[MAXDATASIZE];
             FileInputStream in = new FileInputStream(filePath);
 
+            // Continue to read the data
             while(in.read(buffer, 0, MAXDATASIZE) != -1){
 
                 // Send the Data frame

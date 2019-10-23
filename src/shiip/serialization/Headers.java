@@ -112,7 +112,7 @@ public final class Headers extends Message {
                                             entry.getValue().getBytes(),
                                         false);
             } catch (IOException e) {
-                System.err.println(e.getMessage());;
+                System.err.println(e.getMessage());
             }
         }
         byte[] compressedHeaders = out.toByteArray();

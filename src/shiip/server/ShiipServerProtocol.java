@@ -139,9 +139,6 @@ public class ShiipServerProtocol implements Runnable {
                 }
             }
 
-        } catch (IOException ex) {
-            // This block should only trigger if an IOException is thrown meaning
-            // the client has disconnected or a timeout has occurred
         } catch (Exception ex){
             logger.log(Level.SEVERE, ex.getMessage());
             // Socket should auto-close

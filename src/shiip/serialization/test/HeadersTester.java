@@ -76,6 +76,7 @@ public class HeadersTester {
             });
         }
 
+        @Test
         @DisplayName("No headers block")
         public void testNoHeadersBlock(){
             assertDoesNotThrow(() -> {
