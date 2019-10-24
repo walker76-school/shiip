@@ -16,14 +16,18 @@ import java.nio.ByteBuffer;
  */
 public final class Settings extends Message {
 
+    // Flags for Settings frames
     private static final byte FLAGS = 0x1;
+
+    // Required streamID for Settings Frames
+    private static final int STREAM_ID = 0;
 
     /**
      * Creates Settings message
      * @throws BadAttributeException if attribute invalid (not thrown in this case)
      */
     public Settings() throws BadAttributeException {
-        setStreamID(0);
+        setStreamID(STREAM_ID);
     }
 
     /**
@@ -43,7 +47,7 @@ public final class Settings extends Message {
      */
     @Override
     public void setStreamID(int streamID) throws BadAttributeException {
-        if(streamID != 0){
+        if(streamID != STREAM_ID){
             throw new BadAttributeException("StreamID for Settings must be 0",
                                             "streamID");
         }

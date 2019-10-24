@@ -23,9 +23,16 @@ import static shiip.server.Server.MINDATAINTERVAL;
  */
 public class ShiipDataProtocol implements Runnable {
 
+    // Framer for sending frames
     private final Framer framer;
+
+    // Logger for logging info and errors
     private final Logger logger;
+
+    // streamID to send frames on
     private final int streamID;
+
+    // The file to send
     private final String filePath;
 
     /**

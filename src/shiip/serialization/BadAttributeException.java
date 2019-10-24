@@ -14,7 +14,10 @@ import java.io.Serializable;
  */
 public class BadAttributeException extends Exception implements Serializable {
 
+    // Unique ID for BadAttributeException
     private static final long serialVersionUID = 16L;
+
+    // Bad attribute
     private String attribute;
 
     /**

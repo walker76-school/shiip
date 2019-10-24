@@ -54,7 +54,10 @@ public final class Headers extends Message {
     // Acceptable char for value
     private static final byte EXCEPTION_CHAR = 0x9;
 
+    // If the headers is the last one
     private boolean isEnd;
+
+    // Header pairs for the Headers
     private Map<String, String> headerValues;
 
     /**

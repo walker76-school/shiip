@@ -25,15 +25,39 @@ import java.util.logging.SimpleFormatter;
  */
 public class Server {
 
+    // Maximum size of Data frames
     public static final int MAXDATASIZE = 16384;
+
+    // Maximum interval to send Data frames
     public static final int MINDATAINTERVAL = 2000;
+
+    // Index of the port in args
+    private static final int PORT_NDX = 0;
+
+    // Index of thread count in args
+    private static final int THREAD_NDX = 1;
+
+    // Index of document root in args
+    private static final int ROOT_NDX = 2;
+
+    // Number of args
+    private static final int NUM_ARGS = 3;
+
+    // Keystore name
+    private static final String KEYSTORE = "mykeystore";
+
+    // Password for keystore
+    private static final String KEYSTORE_PWD = "secret";
+
+    // File for log
+    private static final String LOG_FILE = "./connections.log";
 
     public static void main(String[] args) {
 
         // Establish Logger
         Logger logger = Logger.getLogger("ShiipServer");
         try {
-            FileHandler handler = new FileHandler("./connections.log");
+            FileHandler handler = new FileHandler(LOG_FILE);
             handler.setFormatter(new SimpleFormatter());
             logger.addHandler(handler);
         } catch (IOException e){
@@ -42,21 +66,21 @@ public class Server {
         }
 
         // Test for correct # of args
-        if(args.length != 3){
+        if(args.length != NUM_ARGS){
             logger.log(Level.SEVERE, "Parameter(s): <Port> <ThreadCount> <DocumentRoot>");
             return;
         }
 
-        ExecutorService pool = initThreadPool(args[1], logger);
+        ExecutorService pool = initThreadPool(args[THREAD_NDX], logger);
         if(pool != null) {
 
-            try (ServerSocket servSock = TLSFactory.getServerListeningSocket(Integer.parseInt(args[0]), "mykeystore", "secret")) {
+            try (ServerSocket servSock = TLSFactory.getServerListeningSocket(Integer.parseInt(args[PORT_NDX]), KEYSTORE, KEYSTORE_PWD)) {
 
                 while (true) { // Run forever, accepting and servicing connections
 
                     try {
                         Socket clntSock = TLSFactory.getServerConnectedSocket(servSock);
-                        pool.execute(new ShiipServerProtocol(clntSock, args[2], logger));
+                        pool.execute(new ShiipServerProtocol(clntSock, args[ROOT_NDX], logger));
                     } catch (IOException e){
                         logger.log(Level.WARNING, e.getMessage());
                     }

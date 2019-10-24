@@ -60,9 +60,16 @@ public class ShiipServerProtocol implements Runnable {
     // Initial HTTP handshake message
     private static final String HANDSHAKE_MESSAGE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
 
+    // The socket the client is connected on
     private final Socket clntSock;
+
+    // The root to search for documents in
     private final String documentRoot;
+
+    // Logger for info and errors
     private final Logger logger;
+
+    // ThreadPool for file threads
     private final ExecutorService pool;
 
     /**

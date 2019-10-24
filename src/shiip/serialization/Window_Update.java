@@ -17,9 +17,16 @@ import java.nio.ByteBuffer;
  */
 public final class Window_Update extends Message {
 
+    // Required length of payload in bytes
     private static final int PAYLOAD_LENGTH = 4;
+
+    // Flags for Window_Update frames
     private static final byte FLAGS = 0x0;
 
+    // Minimum streamID
+    private static final int MIN_STREAMID = 0;
+
+    // Amount to increment window
     private int increment;
 
     /**
@@ -67,7 +74,7 @@ public final class Window_Update extends Message {
      */
     @Override
     public void setStreamID(int streamID) throws BadAttributeException {
-        if(streamID < 0){
+        if(streamID < MIN_STREAMID){
             throw new BadAttributeException("streamID cannot be 0", "streamID");
         }
         this.streamID = streamID;

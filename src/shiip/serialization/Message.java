@@ -18,6 +18,7 @@ import java.util.Objects;
  */
 public abstract class Message {
 
+    // Stream ID of the Message
     protected int streamID;
 
     /**

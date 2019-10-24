@@ -19,6 +19,7 @@ import java.util.Objects;
  */
 public class Framer {
 
+    // Number of cycles to encode integer
     private static final int ENCODE_CYCLES = 3;
 
     // OutputStream to print the frame to

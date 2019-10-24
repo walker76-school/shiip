@@ -18,11 +18,19 @@ import java.util.Arrays;
  */
 public final class Data extends Message {
 
+    // Location of error bit
     private static final byte ERROR_BIT = 0x8;
+
+    // Location of isEnd bit
     private static final byte IS_END_BIT = 0x1;
+
+    // Flags for Data
     private static final byte FLAGS = 0x0;
 
+    // If the Data frame is the last one
     private boolean isEnd;
+
+    // The data of the Data frame
     private byte[] data;
 
     /**
