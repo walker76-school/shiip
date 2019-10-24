@@ -18,7 +18,9 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.Arrays;
 
 /**
  * A TCP client for SHiiP frames

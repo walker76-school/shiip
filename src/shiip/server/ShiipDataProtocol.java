@@ -6,7 +6,8 @@
 
 package shiip.server;
 
-import shiip.serialization.*;
+import shiip.serialization.Framer;
+import shiip.serialization.Data;
 
 import java.io.FileInputStream;
 import java.util.logging.Level;

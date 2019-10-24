@@ -10,7 +10,10 @@ import com.twitter.hpack.Decoder;
 import com.twitter.hpack.Encoder;
 import shiip.serialization.*;
 
-import java.io.*;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.IOException;
+import java.io.File;
 import java.net.Socket;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -52,7 +55,7 @@ public class ShiipServerProtocol implements Runnable {
     private static final int CONNECTION_STREAMID = 0;
 
     // Maximum sized payload for a frame
-    public static final int MAX_INCREMENT = 16384;
+    private static final int MAX_INCREMENT = 16384;
 
     // Initial HTTP handshake message
     private static final String HANDSHAKE_MESSAGE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
@@ -80,7 +83,7 @@ public class ShiipServerProtocol implements Runnable {
         try (
             clntSock; // So the socket is auto-closable
             InputStream in = clntSock.getInputStream();
-            OutputStream out = clntSock.getOutputStream();
+            OutputStream out = clntSock.getOutputStream()
         ) {
 
             // To keep track of seen streamIDs
