@@ -1,8 +1,5 @@
 package jack.serialization;
 
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-
 /**
  * Query message
  *

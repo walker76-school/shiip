@@ -1,7 +1,5 @@
 package jack.serialization;
 
-import java.util.Objects;
-
 /**
  * ACK message
  *

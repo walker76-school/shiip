@@ -111,25 +111,30 @@ public class Client {
         DatagramPacket packet = new DatagramPacket(encodedQuery, encodedQuery.length);
         sock.send(packet);
 
-        // Receive message
-        Message m = getMessage(sock);
-        if(m != null){
+        boolean unacknowledged = true;
+        while(unacknowledged) {
+            // Receive message
+            Message m = getMessage(sock);
+            if (m != null) {
 
-            // Check it's from correct source
+                // Check it's from correct source
 
-            switch (m.getOperation()){
-                case "R":
-                    Response response = (Response) m;
-                    System.out.println(response.toString());
-                    break;
-                case "A":
-                    System.err.println("Unexpected ACK");
-                    break;
-                case "E":
-                    Error error = (Error) m;
-                    System.out.println(error.getErrorMessage());
-                    break;
-                default: System.err.println("Unexpected message type");
+                switch (m.getOperation()) {
+                    case "R":
+                        Response response = (Response) m;
+                        System.out.println(response.toString());
+                        unacknowledged = false;
+                        break;
+                    case "A":
+                        System.err.println("Unexpected ACK");
+                        break;
+                    case "E":
+                        Error error = (Error) m;
+                        System.out.println(error.getErrorMessage());
+                        break;
+                    default:
+                        System.err.println("Unexpected message type");
+                }
             }
         }
     }
