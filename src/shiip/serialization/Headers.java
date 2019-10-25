@@ -46,10 +46,13 @@ public final class Headers extends Message {
     private static final byte IS_END_BIT = 0x1;
 
     // Lower bound of acceptable chars
-    private static final byte LOWER_BOUND = 0x20;
+    private static final byte LOWER_BOUND = 0x21;
 
     // Upper bound of acceptable chars
     private static final byte UPPER_BOUND = 0x7E;
+
+    // Space, which is acceptable for values
+    private static final byte SPACE = 0x20;
 
     // Acceptable char for value
     private static final byte EXCEPTION_CHAR = 0x9;
@@ -143,7 +146,7 @@ public final class Headers extends Message {
 
     @Override
     protected byte[] getEncodedData(Encoder encoder) {
-        Objects.requireNonNull(encoder);
+        Objects.requireNonNull(encoder, "Encoder cannot be null");
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         for(Map.Entry<String, String> entry : headerValues.entrySet()) {
@@ -192,6 +195,10 @@ public final class Headers extends Message {
      * @return the header value for the name
      */
     public String getValue(String name){
+        if(!isValidName(name)){
+            return null;
+        }
+
         return headerValues.getOrDefault(name, null);
     }
 
@@ -261,7 +268,7 @@ public final class Headers extends Message {
         }
 
         for(char c : value.toCharArray()){
-            if (c != EXCEPTION_CHAR && !(c >= LOWER_BOUND && c <= UPPER_BOUND) ){
+            if (c != EXCEPTION_CHAR && c != SPACE && !(c >= LOWER_BOUND && c <= UPPER_BOUND) ){
                 return false;
             }
         }
