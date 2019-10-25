@@ -3,14 +3,14 @@ package jack.serialization;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
+import static jack.serialization.Constants.*;
+
 /**
  * Represents a Jack message
  *
  * @version 1.0
  */
 public abstract class Message {
-
-    protected static final Charset ENC = StandardCharsets.US_ASCII;
 
     /**
      * Deserialize message from given bytes
@@ -24,23 +24,23 @@ public abstract class Message {
         }
 
         String fullMessage = new String(msgBytes, ENC);
-        if (fullMessage.length() < 2){
+        if (fullMessage.length() < MIN_MSG_LEN){
             throw new IllegalArgumentException("Invalid message");
         }
-        char op = fullMessage.charAt(0);
-        char sp = fullMessage.charAt(1);
+        String op = String.valueOf(fullMessage.charAt(OP_NDX));
+        char sp = fullMessage.charAt(SP_NDX);
         if(sp != ' '){
             throw new IllegalArgumentException("Missing space");
         }
 
-        String payload = fullMessage.substring(2);
+        String payload = fullMessage.substring(PAYLOAD_NDX);
 
         switch(op) {
-            case 'Q': return new Query(payload);
-            case 'R': return new Response(payload);
-            case 'N': return new New(payload);
-            case 'A': return new ACK(payload);
-            case 'E': return new Error(payload);
+            case QUERY_OP: return new Query(payload);
+            case RESPONSE_OP: return new Response(payload);
+            case NEW_OP: return new New(payload);
+            case ACK_OP: return new ACK(payload);
+            case ERROR_OP: return new Error(payload);
             default: throw new IllegalArgumentException("Invalid op");
         }
     }
@@ -52,7 +52,7 @@ public abstract class Message {
      * @return validated port
      */
     protected int validatePort(int port) throws IllegalArgumentException{
-        if(port <= 0 || port > 65535){
+        if(port < PORT_LOW || port > PORT_HIGH){
             throw new IllegalArgumentException("Invalid port: " + port);
         }
         return port;
@@ -80,7 +80,7 @@ public abstract class Message {
      * @return validated host
      */
     protected String validateHost(String host) throws IllegalArgumentException{
-        if(host == null || host.isEmpty() || !host.matches("[a-zA-Z0-9.-]+")){
+        if(host == null || host.isEmpty() || !host.matches(HOST_REGEX)){
             throw new IllegalArgumentException("Invalid host: " + host);
         }
         return host;

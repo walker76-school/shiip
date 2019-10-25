@@ -1,5 +1,7 @@
 package jack.serialization;
 
+import static jack.serialization.Constants.*;
+
 /**
  * New message
  *
@@ -28,25 +30,13 @@ public class New extends Message{
      */
     protected New(String payload) throws IllegalArgumentException {
 
-        String[] serviceTokens = payload.split(":");
-        if(serviceTokens.length != 2){
+        String[] serviceTokens = payload.split(SERVICE_REGEX);
+        if(serviceTokens.length != SERVICE_TOKEN_LEN){
             throw new IllegalArgumentException("Invalid service");
         }
 
-        setHost(serviceTokens[0]);
-        setPort(validatePort(serviceTokens[1]));
-    }
-
-    /**
-     * Returns string of the form
-     * NEW [name:port]
-     *
-     * For example
-     * NEW [google.com:8080]
-     */
-    @Override
-    public String toString() {
-        return String.format("NEW [%s:%d]", host, port);
+        setHost(serviceTokens[HOST_NDX]);
+        setPort(validatePort(serviceTokens[PORT_NDX]));
     }
 
     /**
@@ -83,6 +73,18 @@ public class New extends Message{
         this.port = validatePort(port);
     }
 
+    /**
+     * Returns string of the form
+     * NEW [name:port]
+     *
+     * For example
+     * NEW [google.com:8080]
+     */
+    @Override
+    public String toString() {
+        return String.format("NEW [%s:%d]", host, port);
+    }
+
     @Override
     public byte[] encode() {
         return String.format("%s %s:%d", getOperation(), getHost(), getPort()).getBytes(ENC);
@@ -90,7 +92,7 @@ public class New extends Message{
 
     @Override
     public String getOperation() {
-        return "N";
+        return NEW_OP;
     }
 
     @Override
@@ -107,7 +109,7 @@ public class New extends Message{
     @Override
     public int hashCode() {
         int result = host.hashCode();
-        result = 31 * result + port;
+        result = HASH_PRIME * result + port;
         return result;
     }
 }

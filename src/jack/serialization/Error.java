@@ -1,5 +1,8 @@
 package jack.serialization;
 
+import static jack.serialization.Constants.ENC;
+import static jack.serialization.Constants.ERROR_OP;
+
 /**
  * Error message
  *
@@ -57,7 +60,7 @@ public class Error extends Message {
 
     @Override
     public String getOperation() {
-        return "E";
+        return ERROR_OP;
     }
 
     @Override

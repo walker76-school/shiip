@@ -1,5 +1,7 @@
 package jack.serialization;
 
+import static jack.serialization.Constants.*;
+
 /**
  * Query message
  *
@@ -37,7 +39,7 @@ public class Query extends Message {
 
     @Override
     protected String validateHost(String host) throws IllegalArgumentException {
-        return host != null && host.equals("*") ? host : super.validateHost(host);
+        return host != null && host.equals(WILDCARD) ? host : super.validateHost(host);
     }
 
     /**
@@ -59,7 +61,7 @@ public class Query extends Message {
 
     @Override
     public String getOperation() {
-        return "Q";
+        return QUERY_OP;
     }
 
     @Override

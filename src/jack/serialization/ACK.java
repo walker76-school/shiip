@@ -1,5 +1,7 @@
 package jack.serialization;
 
+import static jack.serialization.Constants.*;
+
 /**
  * ACK message
  *
@@ -28,26 +30,14 @@ public class ACK extends Message {
      */
     protected ACK(String payload) throws IllegalArgumentException {
 
-        String[] serviceTokens = payload.split(":");
-        if(serviceTokens.length != 2){
+        String[] serviceTokens = payload.split(SERVICE_REGEX);
+        if(serviceTokens.length != SERVICE_TOKEN_LEN){
             throw new IllegalArgumentException("Invalid service");
         }
 
-        setHost(serviceTokens[0]);
-        setPort(validatePort(serviceTokens[1]));
+        setHost(serviceTokens[HOST_NDX]);
+        setPort(validatePort(serviceTokens[PORT_NDX]));
 
-    }
-
-    /**
-     * Returns string of the form
-     * ACK [name:port]
-     *
-     * For example
-     * ACK [google.com:8080]
-     */
-    @Override
-    public String toString() {
-        return String.format("ACK [%s:%d]", host, port);
     }
 
     /**
@@ -84,6 +74,18 @@ public class ACK extends Message {
         this.port = validatePort(port);
     }
 
+    /**
+     * Returns string of the form
+     * ACK [name:port]
+     *
+     * For example
+     * ACK [google.com:8080]
+     */
+    @Override
+    public String toString() {
+        return String.format("ACK [%s:%d]", host, port);
+    }
+
     @Override
     public byte[] encode() {
         return String.format("%s %s:%d", getOperation(), getHost(), getPort()).getBytes(ENC);
@@ -91,7 +93,7 @@ public class ACK extends Message {
 
     @Override
     public String getOperation() {
-        return "A";
+        return ACK_OP;
     }
 
     @Override
@@ -108,7 +110,7 @@ public class ACK extends Message {
     @Override
     public int hashCode() {
         int result = host.hashCode();
-        result = 31 * result + port;
+        result = HASH_PRIME * result + port;
         return result;
     }
 }

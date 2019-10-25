@@ -2,6 +2,8 @@ package jack.serialization;
 
 import java.util.*;
 
+import static jack.serialization.Constants.*;
+
 /**
  * Response message
  *
@@ -12,6 +14,12 @@ import java.util.*;
  * @version 1.0
  */
 public class Response extends Message {
+
+    // Regex to split the services
+    private static final String SPLIT_REGEX = "]\\[";
+
+    // Regex to trim the services for host:port extraction
+    private static final String STRIP_REGEX = "[\\[\\]]";
 
     private Set<String> serviceList;
 
@@ -29,17 +37,17 @@ public class Response extends Message {
     protected Response(String payload) throws IllegalArgumentException {
         serviceList = new TreeSet<>();
         if(!payload.isEmpty()){
-            String[] services = payload.split("]\\[");
+            String[] services = payload.split(SPLIT_REGEX);
             for (String service : services) {
 
-                String hostAndPort = service.replaceAll("[\\[\\]]", "");
-                String[] serviceParts = hostAndPort.split(":");
-                if (serviceParts.length != 2) {
+                String hostAndPort = service.replaceAll(STRIP_REGEX, "");
+                String[] serviceParts = hostAndPort.split(SERVICE_REGEX);
+                if (serviceParts.length != SERVICE_TOKEN_LEN) {
                     throw new IllegalArgumentException("Invalid service - " + hostAndPort);
                 }
 
-                validateHost(serviceParts[0]);
-                validatePort(serviceParts[1]);
+                validateHost(serviceParts[HOST_NDX]);
+                validatePort(serviceParts[PORT_NDX]);
 
                 serviceList.add(hostAndPort);
             }
@@ -74,6 +82,7 @@ public class Response extends Message {
      * For example
      * RESPONSE [wind:8000][fire:7000]
      */
+    @Override
     public String toString() {
         StringBuilder builder = new StringBuilder("RESPONSE ");
         for (String service : serviceList){
@@ -95,7 +104,7 @@ public class Response extends Message {
 
     @Override
     public String getOperation() {
-        return "R";
+        return RESPONSE_OP;
     }
 
     @Override
