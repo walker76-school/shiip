@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 /**
  * Represents a Jack message
@@ -21,20 +22,71 @@ public abstract class Message {
      * @throws IllegalArgumentException if validation fails, including null msgBytes
      */
     public static Message decode(byte[] msgBytes) throws IllegalArgumentException {
-        if(msgBytes == null){
-            throw new IllegalArgumentException("Message cannot be null");
+        if(msgBytes == null || msgBytes.length == 0){
+            throw new IllegalArgumentException("Invalid msgBytes");
         }
 
-        ByteBuffer buffer = ByteBuffer.wrap(msgBytes);
-        char op = buffer.getChar();
+        String fullMessage = new String(msgBytes, ENC);
+        if (fullMessage.length() < 2){
+            throw new IllegalArgumentException("Invalid message");
+        }
+        char op = fullMessage.charAt(0);
+        char sp = fullMessage.charAt(1);
+        if(sp != ' '){
+            throw new IllegalArgumentException("Missing space");
+        }
+
+        String payload = fullMessage.substring(2);
+
         switch(op) {
-            case 'Q': return new Query(msgBytes);
-            case 'R': return new Response(msgBytes);
-            case 'N': return new New(msgBytes);
-            case 'A': return new ACK(msgBytes);
-            case 'E': return new Error(msgBytes);
+            case 'Q': return new Query(payload);
+            case 'R': return new Response(payload);
+            case 'N': return new New(payload);
+            case 'A': return new ACK(payload);
+            case 'E': return new Error(payload);
             default: throw new IllegalArgumentException("Invalid op");
         }
+    }
+
+    /**
+     * Checks the validity of the port
+     * @param port port
+     * @throws IllegalArgumentException if invalid port
+     * @return validated port
+     */
+    protected int validatePort(int port) throws IllegalArgumentException{
+        if(port <= 0 || port > 65535){
+            throw new IllegalArgumentException("Invalid port: " + port);
+        }
+        return port;
+    }
+
+    /**
+     * Checks the validity of the port
+     * @param portString string representation of port
+     * @throws IllegalArgumentException if invalid port
+     * @return validated port
+     */
+    protected int validatePort(String portString) throws IllegalArgumentException{
+        try {
+            int port = Integer.parseInt(portString);
+            return validatePort(port);
+        } catch (NumberFormatException e){
+            throw new IllegalArgumentException("Invalid port: " + portString, e);
+        }
+    }
+
+    /**
+     * Checks the validity of the host
+     * @param host host
+     * @throws IllegalArgumentException if invalid host
+     * @return validated host
+     */
+    protected String validateHost(String host) throws IllegalArgumentException{
+        if(host == null || host.isEmpty() || !host.matches("[a-zA-Z0-9.-]+")){
+            throw new IllegalArgumentException("Invalid host: " + host);
+        }
+        return host;
     }
 
     /**

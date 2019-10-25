@@ -23,31 +23,18 @@ public class ACK extends Message {
 
     /**
      * Creates a ACK message from a given byte array
-     * @param msgBytes byte array
+     * @param payload payload
      * @throws IllegalArgumentException if any validation problem with host and/or port, including null, etc.
      */
-    public ACK(byte[] msgBytes) throws IllegalArgumentException {
-        String message = new String(msgBytes, ENC);
-        String[] tokens = message.split(" ");
-        if(tokens.length != 2){
-            throw new IllegalArgumentException("Invalid message");
-        }
+    protected ACK(String payload) throws IllegalArgumentException {
 
-        String hostAndPort = tokens[1];
-        String[] serviceTokens = hostAndPort.split(":");
+        String[] serviceTokens = payload.split(":");
         if(serviceTokens.length != 2){
             throw new IllegalArgumentException("Invalid service");
         }
-        String host = serviceTokens[0];
-        setHost(host);
 
-        try{
-            String portString = serviceTokens[1];
-            int port = Integer.parseInt(portString);
-            setPort(port);
-        } catch (NumberFormatException e){
-            throw new IllegalArgumentException("Invalid port", e);
-        }
+        setHost(serviceTokens[0]);
+        setPort(validatePort(serviceTokens[1]));
 
     }
 
@@ -77,11 +64,7 @@ public class ACK extends Message {
      * @throws IllegalArgumentException if validation failure, including null host
      */
     public final void setHost(String host) throws IllegalArgumentException {
-        if (host == null){
-            throw new IllegalArgumentException("Host cannot be null");
-        }
-
-        this.host = host;
+        this.host = validateHost(host);
     }
 
     /**
@@ -98,20 +81,34 @@ public class ACK extends Message {
      * @throws IllegalArgumentException if validation fails
      */
     public final void setPort(int port) throws IllegalArgumentException {
-        if (port < 0){
-            throw new IllegalArgumentException("Port must be positive");
-        }
-
-        this.port = port;
+        this.port = validatePort(port);
     }
 
     @Override
     public byte[] encode() {
-        return null;
+        return String.format("%s %s:%d", getOperation(), getHost(), getPort()).getBytes(ENC);
     }
 
     @Override
     public String getOperation() {
         return "A";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ACK ack = (ACK) o;
+
+        if (port != ack.port) return false;
+        return host.equals(ack.host);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = host.hashCode();
+        result = 31 * result + port;
+        return result;
     }
 }

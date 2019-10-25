@@ -20,17 +20,23 @@ public class Error extends Message {
 
     /**
      * Creates a Error message from a given byte array
-     * @param msgBytes byte array
+     * @param tokens payload
      * @throws IllegalArgumentException if any validation problem with errorMessage, including null, etc.
      */
-    public Error(byte[] msgBytes) throws IllegalArgumentException {
-        String message = new String(msgBytes, ENC);
-        String[] tokens = message.split(" ");
-        if(tokens.length != 2){
+    protected Error(String[] tokens) throws IllegalArgumentException {
+        if(tokens.length < 1){
             throw new IllegalArgumentException("Invalid error message");
         }
 
-        String errorMessage = tokens[1];
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < tokens.length; i++) {
+            builder.append(tokens[i]);
+            if(i != tokens.length - 1){
+                builder.append(" ");
+            }
+        }
+
+        String errorMessage = builder.toString();
         setErrorMessage(errorMessage);
     }
 
@@ -48,7 +54,7 @@ public class Error extends Message {
      * @throws IllegalArgumentException if validation fails, including null
      */
     public final void setErrorMessage(String errorMessage) throws IllegalArgumentException {
-        if (errorMessage == null){
+        if (errorMessage == null || errorMessage.isEmpty()){
             throw new IllegalArgumentException("Error message cannot be null");
         }
 
@@ -68,11 +74,26 @@ public class Error extends Message {
 
     @Override
     public byte[] encode() {
-        return null;
+        return String.format("%s %s", getOperation(), getErrorMessage()).getBytes(ENC);
     }
 
     @Override
     public String getOperation() {
         return "E";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Error error = (Error) o;
+
+        return errorMessage.equals(error.errorMessage);
+    }
+
+    @Override
+    public int hashCode() {
+        return errorMessage.hashCode();
     }
 }

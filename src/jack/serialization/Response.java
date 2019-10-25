@@ -1,7 +1,6 @@
 package jack.serialization;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Response message
@@ -14,35 +13,36 @@ import java.util.List;
  */
 public class Response extends Message {
 
-    private List<String> serviceList;
+    private Set<String> serviceList;
 
     /**
      * Construct response with empty host:port list
      */
     public Response() {
-        serviceList = new ArrayList<>();
+        serviceList = new HashSet<>();
     }
 
     /**
      * Creates a Response message from a given byte array
-     * @param msgBytes byte array
+     * @param payload payload
      */
-    public Response(byte[] msgBytes) throws IllegalArgumentException {
-        String message = new String(msgBytes, ENC);
-        String[] tokens = message.split(" ");
-        if(tokens.length < 2){
-            throw new IllegalArgumentException("Invalid message");
-        }
+    protected Response(String payload) throws IllegalArgumentException {
+        serviceList = new TreeSet<>();
+        if(!payload.isEmpty()){
+            String[] services = payload.split("]\\[");
+            for (String service : services) {
 
-        serviceList = new ArrayList<>();
-        for(int i = 1; i < tokens.length; i++){
-            String hostAndPort = tokens[i];
+                String hostAndPort = service.replaceAll("[\\[\\]]", "");
+                String[] serviceParts = hostAndPort.split(":");
+                if (serviceParts.length != 2) {
+                    throw new IllegalArgumentException("Invalid service - " + hostAndPort);
+                }
 
-            if(!hostAndPort.matches("[a-z|A-Z]:[a-z|A-Z]")){
-                throw new IllegalArgumentException("Invalid service - " + hostAndPort);
+                validateHost(serviceParts[0]);
+                validatePort(serviceParts[1]);
+
+                serviceList.add(hostAndPort);
             }
-
-            serviceList.add(hostAndPort);
         }
     }
 
@@ -53,7 +53,7 @@ public class Response extends Message {
      * @return service list
      */
     public List<String> getServiceList() {
-        return serviceList;
+        return new ArrayList<>(serviceList);
     }
 
     /**
@@ -64,8 +64,7 @@ public class Response extends Message {
      * @throws IllegalArgumentException if validation fails, including null host
      */
     public final void addService(String host, int port) throws IllegalArgumentException {
-        String service = String.format("%s:%d", host, port);
-        serviceList.add(service);
+        serviceList.add(String.format("%s:%d", validateHost(host), validatePort(port)));
     }
 
     /**
@@ -86,11 +85,31 @@ public class Response extends Message {
 
     @Override
     public byte[] encode() {
-        return null;
+        StringBuilder builder = new StringBuilder();
+        builder.append(String.format("%s ", getOperation()));
+        for(String service : serviceList){
+            builder.append(String.format("[%s]", service));
+        }
+        return builder.toString().getBytes(ENC);
     }
 
     @Override
     public String getOperation() {
         return "R";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Response response = (Response) o;
+
+        return serviceList.equals(response.serviceList);
+    }
+
+    @Override
+    public int hashCode() {
+        return serviceList.hashCode();
     }
 }

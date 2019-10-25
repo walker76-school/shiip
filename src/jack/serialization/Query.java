@@ -19,22 +19,6 @@ public class Query extends Message {
     }
 
     /**
-     * Creates a Query message from a given byte array
-     * @param msgBytes byte array
-     * @throws IllegalArgumentException if any validation problem with searchString, including null, etc.
-     */
-    public Query(byte[] msgBytes) throws IllegalArgumentException {
-        String message = new String(msgBytes, ENC);
-        String[] tokens = message.split(" ");
-        if(tokens.length != 2){
-            throw new IllegalArgumentException("Invalid search string");
-        }
-
-        String searchString = tokens[1];
-        setSearchString(searchString);
-    }
-
-    /**
      * Get the search string
      * @return search string
      */
@@ -48,11 +32,12 @@ public class Query extends Message {
      * @throws IllegalArgumentException if search string fails validation, including null
      */
     public final void setSearchString(String searchString) throws IllegalArgumentException {
-        if (searchString == null){
-            throw new IllegalArgumentException("Search string cannot be null");
-        }
+        this.searchString = validateHost(searchString);
+    }
 
-        this.searchString = searchString;
+    @Override
+    protected String validateHost(String host) throws IllegalArgumentException {
+        return host != null && host.equals("*") ? host : super.validateHost(host);
     }
 
     /**
@@ -69,11 +54,26 @@ public class Query extends Message {
 
     @Override
     public byte[] encode() {
-        return null;
+        return String.format("%s %s", getOperation(), getSearchString()).getBytes(ENC);
     }
 
     @Override
     public String getOperation() {
         return "Q";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Query query = (Query) o;
+
+        return searchString.equals(query.searchString);
+    }
+
+    @Override
+    public int hashCode() {
+        return searchString.hashCode();
     }
 }
