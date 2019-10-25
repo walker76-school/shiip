@@ -32,16 +32,9 @@ public class New extends Message{
         if(serviceTokens.length != 2){
             throw new IllegalArgumentException("Invalid service");
         }
-        String host = serviceTokens[0];
-        setHost(host);
 
-        try{
-            String portString = serviceTokens[1];
-            int port = Integer.parseInt(portString);
-            setPort(port);
-        } catch (NumberFormatException e){
-            throw new IllegalArgumentException("Invalid port", e);
-        }
+        setHost(serviceTokens[0]);
+        setPort(validatePort(serviceTokens[1]));
     }
 
     /**

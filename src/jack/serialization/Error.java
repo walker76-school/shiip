@@ -19,28 +19,6 @@ public class Error extends Message {
     }
 
     /**
-     * Creates a Error message from a given byte array
-     * @param tokens payload
-     * @throws IllegalArgumentException if any validation problem with errorMessage, including null, etc.
-     */
-    protected Error(String[] tokens) throws IllegalArgumentException {
-        if(tokens.length < 1){
-            throw new IllegalArgumentException("Invalid error message");
-        }
-
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < tokens.length; i++) {
-            builder.append(tokens[i]);
-            if(i != tokens.length - 1){
-                builder.append(" ");
-            }
-        }
-
-        String errorMessage = builder.toString();
-        setErrorMessage(errorMessage);
-    }
-
-    /**
      * Get error message
      * @return error message
      */

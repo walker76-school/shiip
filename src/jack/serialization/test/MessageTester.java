@@ -9,6 +9,7 @@ package jack.serialization.test;
 
 import jack.serialization.Message;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -166,6 +167,23 @@ public class MessageTester {
     public void testInvalidString(String msg){
         byte[] invalidMessage = toAscii(msg);
         assertThrows(IllegalArgumentException.class, () ->{
+            Message.decode(invalidMessage);
+        });
+    }
+
+    @Test
+    @DisplayName("Null msgBytes")
+    public void testNullMsgBytes(){
+        assertThrows(IllegalArgumentException.class, () ->{
+            Message.decode(null);
+        });
+    }
+
+    @Test
+    @DisplayName("Empty msgBytes")
+    public void testEmptyMsgBytes(){
+        assertThrows(IllegalArgumentException.class, () ->{
+            byte[] invalidMessage = new byte[0];
             Message.decode(invalidMessage);
         });
     }

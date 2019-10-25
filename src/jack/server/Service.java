@@ -1,4 +1,4 @@
-package jack.serialization;
+package jack.server;
 
 public class Service {
     private String host;

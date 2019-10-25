@@ -51,4 +51,11 @@ public class ErrorTester {
         Error q2 = new Error(errorStr);
         assertEquals(q1.hashCode(), q2.hashCode());
     }
+
+    @Test
+    @DisplayName("tostring")
+    public void testToString(){
+        Error error = new Error(errorStr);
+        assertEquals("ERROR " + errorStr, error.toString());
+    }
 }

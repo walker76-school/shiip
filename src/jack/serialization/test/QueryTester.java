@@ -6,6 +6,7 @@
 
 package jack.serialization.test;
 
+import jack.serialization.Error;
 import jack.serialization.Query;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -46,5 +47,17 @@ public class QueryTester {
         Query q1 = new Query(queryStr);
         Query q2 = new Query(queryStr);
         assertEquals(q1.hashCode(), q2.hashCode());
+    }
+
+    @Test
+    @DisplayName("tostring")
+    public void testToString(){
+        Query q1 = new Query(queryStr);
+        Query q2 = new Query(queryStr2);
+        assertAll(
+                () -> assertEquals("QUERY " + queryStr, q1.toString()),
+                () -> assertEquals("QUERY " + queryStr2, q2.toString())
+        );
+
     }
 }
