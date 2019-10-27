@@ -23,9 +23,6 @@ import java.util.*;
  */
 public class Client {
 
-    // Encoding for handshake message
-    private static final Charset ENC = StandardCharsets.US_ASCII;
-
     // Minimum number of parameters allowed
     private static final int MIN_ARGS = 3;
 
@@ -111,8 +108,8 @@ public class Client {
         DatagramPacket packet = new DatagramPacket(encodedQuery, encodedQuery.length);
         sock.send(packet);
 
-        boolean unacknowledged = true;
-        while(unacknowledged) {
+        boolean acknowledged = false;
+        while(!acknowledged) {
             // Receive message
             Message m = getMessage(sock);
             if (m != null) {
@@ -123,14 +120,14 @@ public class Client {
                     case "R":
                         Response response = (Response) m;
                         System.out.println(response.toString());
-                        unacknowledged = false;
+                        acknowledged = true;
                         break;
                     case "A":
                         System.err.println("Unexpected ACK");
                         break;
                     case "E":
                         Error error = (Error) m;
-                        System.out.println(error.getErrorMessage());
+                        System.err.println(error.getErrorMessage());
                         break;
                     default:
                         System.err.println("Unexpected message type");
