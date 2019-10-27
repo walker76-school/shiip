@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 public class Server {
 
     // Max length of message
-    public static final int MAX_LENGTH = 65507;
+    private static final int MAX_LENGTH = 65507;
 
     // Index of the port in args
     private static final int PORT_NDX = 0;
@@ -66,6 +66,12 @@ public class Server {
 
     }
 
+    /**
+     * Handles a received datagram
+     * @param packet the received datagram
+     * @param sock the socket received on
+     * @param logger logger
+     */
     private static void handleDatagram(DatagramPacket packet, DatagramSocket sock, Logger logger) {
         try{
 
@@ -91,6 +97,14 @@ public class Server {
         }
     }
 
+    /**
+     * Converts a Datagram into a Message
+     * @param packet the datagram
+     * @param sock the socket received on
+     * @param logger logger
+     * @return a Message from the datagram
+     * @throws IOException If communication issue
+     */
     private static Message getMessage(DatagramPacket packet, DatagramSocket sock, Logger logger) throws IOException {
         try{
             byte[] encodedMessage = Arrays.copyOfRange(packet.getData(), 0, packet.getLength());
@@ -102,6 +116,13 @@ public class Server {
         }
     }
 
+    /**
+     * Handler for a New message
+     * @param message the New message
+     * @param clntSock the socket received on
+     * @param logger logger
+     * @throws IOException if communication issue
+     */
     private static void handleNew(Message message, DatagramSocket clntSock, Logger logger) throws IOException {
         New n = (New) message;
         logger.log(Level.INFO, "Received message: " + n);
@@ -117,6 +138,13 @@ public class Server {
         sendMessage(ack, clntSock);
     }
 
+    /**
+     * Handler for a Query message
+     * @param message the Query message
+     * @param clntSock the socket received on
+     * @param logger logger
+     * @throws IOException if communication issue
+     */
     private static void handleQuery(Message message, DatagramSocket clntSock, Logger logger) throws IOException {
         Query query = (Query) message;
         logger.log(Level.INFO, "Received message: " + query);
@@ -138,6 +166,13 @@ public class Server {
        sendMessage(response, clntSock);
     }
 
+    /**
+     * Handler for an error
+     * @param errorMessage the error message
+     * @param clntSock the socket received on
+     * @param logger logger
+     * @throws IOException if communication issue
+     */
     private static void handleError(String errorMessage, DatagramSocket clntSock, Logger logger) throws IOException {
         logger.log(Level.WARNING, errorMessage);
 
@@ -149,6 +184,12 @@ public class Server {
 
     }
 
+    /**
+     * Sends a message in a DatagramPacket
+     * @param message the message to send
+     * @param clntSock the socket to send on
+     * @throws IOException if communication issue
+     */
     private static void sendMessage(Message message, DatagramSocket clntSock) throws IOException{
         byte[] encodedError = message.encode();
         DatagramPacket packet = new DatagramPacket(encodedError, encodedError.length);
