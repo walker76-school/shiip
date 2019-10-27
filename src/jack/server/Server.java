@@ -6,18 +6,16 @@
 
 package jack.server;
 
-import shiip.server.ShiipServerProtocol;
-import tls.TLSFactory;
+import jack.serialization.*;
+import jack.serialization.Error;
 
 import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.logging.FileHandler;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
+import java.util.stream.Collectors;
 
 /**
  * SHiiP server for serving files to a client
@@ -32,81 +30,128 @@ public class Server {
     // Index of the port in args
     private static final int PORT_NDX = 0;
 
-    // Index of thread count in args
-    private static final int THREAD_NDX = 1;
-
-    // Index of document root in args
-    private static final int ROOT_NDX = 2;
-
     // Number of args
-    private static final int NUM_ARGS = 3;
+    private static final int NUM_ARGS = 1;
 
-    // Keystore name
-    private static final String KEYSTORE = "mykeystore";
-
-    // Password for keystore
-    private static final String KEYSTORE_PWD = "secret";
-
-    // File for log
-    private static final String LOG_FILE = "./connections.log";
+    private static Set<Service> services;
 
     public static void main(String[] args) {
 
         // Establish Logger
-        Logger logger = Logger.getLogger("ShiipServer");
-        try {
-            FileHandler handler = new FileHandler(LOG_FILE);
-            handler.setFormatter(new SimpleFormatter());
-            logger.addHandler(handler);
-        } catch (IOException e){
-            logger.log(Level.WARNING, e.getMessage());
-            return;
-        }
+        Logger logger = Logger.getLogger("JackServer");
 
         // Test for correct # of args
         if(args.length != NUM_ARGS){
-            logger.log(Level.SEVERE, "Parameter(s): <Port> <ThreadCount> <DocumentRoot>");
+            logger.log(Level.SEVERE, "Parameter(s): <Port>");
             return;
         }
 
-        ExecutorService pool = initThreadPool(args[THREAD_NDX], logger);
-        if(pool != null) {
+        try (DatagramSocket sock = new DatagramSocket(Integer.parseInt(args[PORT_NDX]))) {
+            byte[] inBuffer = new byte[MAX_LENGTH];
+            services = new HashSet<>();
 
-            try (ServerSocket servSock = TLSFactory.getServerListeningSocket(Integer.parseInt(args[PORT_NDX]), KEYSTORE, KEYSTORE_PWD)) {
+            while (true) { // Run forever, accepting and servicing connections
 
-                while (true) { // Run forever, accepting and servicing connections
+                DatagramPacket packet = new DatagramPacket(inBuffer, inBuffer.length);
+                sock.receive(packet);
+                handleDatagram(packet, sock, logger);
 
-                    try {
-                        Socket clntSock = TLSFactory.getServerConnectedSocket(servSock);
-                        pool.execute(new ShiipServerProtocol(clntSock, args[ROOT_NDX], logger));
-                    } catch (IOException e){
-                        logger.log(Level.WARNING, e.getMessage());
-                    }
-
-                }
-                /* NOT REACHED */
-            } catch (NumberFormatException e) {
-                logger.log(Level.WARNING, "Parameter(s): <Port> <ThreadCount> <DocumentRoot>");
-            } catch (Exception e) {
-                logger.log(Level.WARNING, e.getMessage());
             }
+            /* NOT REACHED */
+        } catch (NumberFormatException e) {
+            logger.log(Level.WARNING, "Parameter(s): <Port>");
+        } catch (Exception e) {
+            logger.log(Level.WARNING, e.getMessage());
+        }
+
+    }
+
+    private static void handleDatagram(DatagramPacket packet, DatagramSocket sock, Logger logger) {
+        try{
+
+            Message message = getMessage(packet, sock, logger);
+
+            if(message != null) {
+                switch (message.getOperation()) {
+                    case "N":
+                        handleNew(message, sock, logger);
+                        break;
+                    case "Q":
+                        handleQuery(message, sock, logger);
+                        break;
+                    default:
+                        String errorMessage = "Unexpected message type: " + message;
+                        handleError(errorMessage, sock, logger);
+                        break;
+                }
+            }
+
+        } catch(Exception ex){
+            logger.log(Level.WARNING, "Communication problem: " + ex.getMessage());
         }
     }
 
-    /**
-     * Initializes the thread pool
-     * @param threadCountS the number of threads in the pool
-     * @param logger logger
-     * @return initialized ExecutorService
-     */
-    private static ExecutorService initThreadPool(String threadCountS, Logger logger) {
-        int threadCount;
-        try {
-            threadCount = Integer.parseInt(threadCountS);
-        } catch (NumberFormatException e){
-            logger.log(Level.WARNING, e.getMessage());
+    private static Message getMessage(DatagramPacket packet, DatagramSocket sock, Logger logger) throws IOException {
+        try{
+            byte[] encodedMessage = Arrays.copyOfRange(packet.getData(), 0, packet.getLength());
+            return Message.decode(encodedMessage);
+        } catch (IllegalArgumentException e){
+            String errorMessage = "Invalid message: " + e.getMessage();
+            handleError(errorMessage, sock, logger);
             return null;
         }
-        return Executors.newFixedThreadPool(threadCount);
+    }
+
+    private static void handleNew(Message message, DatagramSocket clntSock, Logger logger) throws IOException {
+        New n = (New) message;
+        logger.log(Level.INFO, "Received message: " + n);
+
+        // Add service to store
+        services.add(new Service(n.getHost(), n.getPort()));
+
+        // Construct ACK
+        ACK ack = new ACK(n.getHost(), n.getPort());
+        logger.log(Level.INFO, ack.toString());
+
+        // Send ACK
+        sendMessage(ack, clntSock);
+    }
+
+    private static void handleQuery(Message message, DatagramSocket clntSock, Logger logger) throws IOException {
+        Query query = (Query) message;
+        logger.log(Level.INFO, "Received message: " + query);
+
+        String searchString = query.getSearchString();
+
+        // IS THIS CASE INSENSITIVE?
+        List<Service> matches = services.stream()
+                .filter(x -> x.getHost().contains(searchString) || searchString.equals("*"))
+                .sorted(Comparator.comparing(Service::getHost))
+                .collect(Collectors.toList());
+
+        // Construct Response
+        Response response = new Response();
+        matches.forEach(x -> response.addService(x.getHost(), x.getPort()));
+        logger.log(Level.INFO, response.toString());
+
+        // Send Response
+       sendMessage(response, clntSock);
+    }
+
+    private static void handleError(String errorMessage, DatagramSocket clntSock, Logger logger) throws IOException {
+        logger.log(Level.WARNING, errorMessage);
+
+        // Construct Error
+        Error error = new Error(errorMessage);
+
+        // Send Error
+        sendMessage(error, clntSock);
+
+    }
+
+    private static void sendMessage(Message message, DatagramSocket clntSock) throws IOException{
+        byte[] encodedError = message.encode();
+        DatagramPacket packet = new DatagramPacket(encodedError, encodedError.length);
+        clntSock.send(packet);
     }
 }
