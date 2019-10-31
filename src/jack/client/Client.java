@@ -14,8 +14,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketTimeoutException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -62,8 +60,8 @@ public class Client {
                     Message reply = getMessage(sock);
                     if (reply != null) {
 
-                        // Handle the message
-                        done = handleMessage(args[OP_NDX], message, reply);
+                        // Handle the reply
+                        done = handleReply(args[OP_NDX], message, reply);
 
                     } else { // If the socket experiences a timeout then retransmit
                         if(retransmitCount >= 3){
@@ -149,12 +147,17 @@ public class Client {
     private static Message getMessage(DatagramSocket socket) throws IOException {
         try {
             // Receive response
-            DatagramPacket message = new DatagramPacket(new byte[MAX_LENGTH], MAX_LENGTH);
-            socket.receive(message);
-            byte[] encodedMessage = Arrays.copyOfRange(message.getData(), 0, message.getLength());
+            DatagramPacket packet = new DatagramPacket(new byte[MAX_LENGTH], MAX_LENGTH);
+            socket.receive(packet);
+            byte[] encodedMessage = Arrays.copyOfRange(packet.getData(), 0, packet.getLength());
+            Message message = Message.decode(encodedMessage);
 
-            // Decode
-            return Message.decode(encodedMessage);
+            // Check if from same host
+            if(!packet.getAddress().equals(socket.getInetAddress()) || packet.getPort() != socket.getPort()){
+                System.err.println("Unexpected message source: " + message);
+            }
+
+            return message;
         } catch (IllegalArgumentException e){
             System.err.println("Invalid message: " + e.getMessage());
             return null;
@@ -163,7 +166,7 @@ public class Client {
         }
     }
 
-    private static boolean handleMessage(String op, Message message, Message reply) throws IOException {
+    private static boolean handleReply(String op, Message message, Message reply) throws IOException {
         switch (reply.getOperation()){
             case "R":
                 if(op.equals("Q")){ // Q sent
