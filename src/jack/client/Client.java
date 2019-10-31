@@ -113,11 +113,7 @@ public class Client {
             return null;
         }
 
-        String searchString = args[PAYLOAD_NDX];
-
-        // Validate searchString
-
-        return new Query(searchString);
+        return new Query(args[PAYLOAD_NDX]);
     }
 
     private static New buildNew(String[] args){

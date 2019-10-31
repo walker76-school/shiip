@@ -52,9 +52,14 @@ public class Server {
 
             while (true) { // Run forever, accepting and servicing connections
 
-                DatagramPacket packet = new DatagramPacket(inBuffer, inBuffer.length);
-                sock.receive(packet);
-                handleDatagram(packet, sock, logger);
+                try {
+                    DatagramPacket packet = new DatagramPacket(inBuffer, inBuffer.length);
+                    sock.receive(packet);
+                    handleDatagram(packet, sock, logger);
+                } catch (IOException e){
+                    String errorMessage = "Communication problem: " + e.getMessage();
+                    handleError(errorMessage, sock, logger);
+                }
 
             }
             /* NOT REACHED */
