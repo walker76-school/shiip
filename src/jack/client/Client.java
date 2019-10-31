@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketTimeoutException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -47,19 +48,33 @@ public class Client {
             return;
         }
 
-        try (DatagramSocket sock = new DatagramSocket()){
+        try (DatagramSocket sock = connectSocket(args)){
 
-            // Connect to the server
-            InetAddress destAddr = InetAddress.getByName(args[HOST_NDX]); // Destination addr
-            int destPort = Integer.parseInt(args[PORT_NDX]); // Destination port
-            sock.connect(destAddr, destPort);
+            Message message = constructMessage(args);
+            if(message != null) {
+                sendMessage(message, sock);
 
-            String op = args[OP_NDX];
+                int retransmitCount = 0;
+                boolean done = false;
+                while (!done) {
 
-            switch (op) {
-                case "Q": handleQuery(args, sock);
-                case "N": handleNew(args, sock);
-                default: System.err.println("Bad parameters: Invalid op");
+                    // Get message
+                    Message reply = getMessage(sock);
+                    if (reply != null) {
+
+                        // Handle the message
+                        done = handleMessage(args[OP_NDX], message, reply);
+
+                    } else { // If the socket experiences a timeout then retransmit
+                        if(retransmitCount >= 3){
+                            System.err.println("Max retransmit limit reached");
+                            return;
+                        } else {
+                            sendMessage(message, sock);
+                            retransmitCount++;
+                        }
+                    }
+                }
             }
 
         } catch (NumberFormatException e){
@@ -69,13 +84,74 @@ public class Client {
         }
     }
 
+    private static DatagramSocket connectSocket(String[] args) throws IOException{
+        DatagramSocket sock = new DatagramSocket();
+
+        // Connect to the server
+        InetAddress destAddr = InetAddress.getByName(args[HOST_NDX]); // Destination addr
+        int destPort = Integer.parseInt(args[PORT_NDX]); // Destination port
+        sock.connect(destAddr, destPort);
+
+        sock.setSoTimeout(3000);
+
+        return sock;
+    }
+
+    private static Message constructMessage(String[] args) {
+        Message message = null;
+        switch (args[OP_NDX]) {
+            case "Q": message = buildQuery(args); break;
+            case "N": message = buildNew(args); break;
+            default: System.err.println("Bad parameters: Invalid op");
+        }
+        return message;
+    }
+
+    private static Query buildQuery(String[] args){
+        if(args.length != 4){
+            System.err.println("Bad parameters: Invalid payload");
+            return null;
+        }
+
+        String searchString = args[PAYLOAD_NDX];
+
+        // Validate searchString
+
+        return new Query(searchString);
+    }
+
+    private static New buildNew(String[] args){
+        if(args.length != 4){
+            System.err.println("Bad parameters: Invalid payload");
+            return null;
+        }
+
+        String payload = args[PAYLOAD_NDX];
+        String[] tokens = payload.split(":");
+        if(tokens.length != 2){
+            System.err.println("Bad parameters: Invalid payload");
+            return null;
+        }
+        String host = tokens[0];
+        String portString = tokens[1];
+
+        int port;
+        try{
+            port = Integer.parseInt(portString);
+        } catch (NumberFormatException e){
+            System.err.println("Bad parameters: Invalid port");
+            return null;
+        }
+
+        return new New(host, port);
+    }
+
     /**
      * Retrieves the next message from the server
      * @return the next message from the server
      */
     private static Message getMessage(DatagramSocket socket) throws IOException {
         try {
-
             // Receive response
             DatagramPacket message = new DatagramPacket(new byte[MAX_LENGTH], MAX_LENGTH);
             socket.receive(message);
@@ -86,115 +162,56 @@ public class Client {
         } catch (IllegalArgumentException e){
             System.err.println("Invalid message: " + e.getMessage());
             return null;
+        } catch (SocketTimeoutException e){
+            return null;
         }
     }
 
-    /**
-     * Handler for a Query message
-     * @param args op and payload
-     * @param sock socket connected to server
-     */
-    private static void handleQuery(String[] args, DatagramSocket sock) throws IOException {
-        if(args.length != 4){
-            System.err.println("Bad parameters: Invalid payload");
-        }
+    private static boolean handleMessage(String op, Message message, Message reply) throws IOException {
+        switch (reply.getOperation()){
+            case "R":
+                if(op.equals("Q")){ // Q sent
 
-        String searchString = args[PAYLOAD_NDX];
+                    System.out.println(reply); // Print answer
+                    return true; // Terminate
 
-        // Validate searchString
-
-        Query query = new Query(searchString);
-        byte[] encodedQuery = query.encode();
-        DatagramPacket packet = new DatagramPacket(encodedQuery, encodedQuery.length);
-        sock.send(packet);
-
-        boolean acknowledged = false;
-        while(!acknowledged) {
-            // Receive message
-            Message m = getMessage(sock);
-            if (m != null) {
-
-                // Check it's from correct source
-
-                switch (m.getOperation()) {
-                    case "R":
-                        Response response = (Response) m;
-                        System.out.println(response.toString());
-                        acknowledged = true;
-                        break;
-                    case "A":
-                        System.err.println("Unexpected ACK");
-                        break;
-                    case "E":
-                        Error error = (Error) m;
-                        System.err.println(error.getErrorMessage());
-                        break;
-                    default:
-                        System.err.println("Unexpected message type");
-                }
-            }
-        }
-    }
-
-    /**
-     * Handler for a New message
-     * @param args op and payload
-     * @param sock socket connected to server
-     */
-    private static void handleNew(String[] args, DatagramSocket sock) throws IOException {
-        if(args.length != 4){
-            System.err.println("Bad parameters: Invalid payload");
-            return;
-        }
-
-        String payload = args[PAYLOAD_NDX];
-        String[] tokens = payload.split(":");
-        if(tokens.length != 2){
-            System.err.println("Bad parameters: Invalid payload");
-            return;
-        }
-        String host = tokens[0];
-        String portString = tokens[1];
-
-        int port;
-        try{
-            port = Integer.parseInt(portString);
-        } catch (NumberFormatException e){
-            System.err.println("Bad parameters: Invalid port");
-            return;
-        }
-
-        New n = new New(host, port);
-        byte[] encodedNew = n.encode();
-        DatagramPacket packet = new DatagramPacket(encodedNew, encodedNew.length);
-        sock.send(packet);
-
-        // Receive message
-        Message m = getMessage(sock);
-        if(m != null){
-
-            // Check it's from correct source
-
-            switch (m.getOperation()){
-                case "R":
+                } else if (op.equals("N")){ // Q not sent
                     System.err.println("Unexpected Response");
-                    break;
-                case "A":
-                    ACK ack = (ACK)m;
-                    String ackHost = ack.getHost();
-                    int ackPort = ack.getPort();
-                    if(!ackHost.equals(host) || ackPort != port) {
+                }
+
+            case "A":
+                if(op.equals("N")){ // N sent
+
+                    ACK ack = (ACK) message; // N
+                    ACK ackReply = (ACK) reply; // <name:port>
+
+                    if(ack.equals(ackReply)) { // <name>:<port> match N
+                        System.out.println(ack); // Print ACK
+                        return true; // Terminate
+
+                    } else { // <name>:<port> does not match N
                         System.err.println("Unexpected ACK");
-                    } else {
-                        System.out.println(ack);
                     }
-                    break;
-                case "E":
-                    Error error = (Error) m;
-                    System.out.println(error.getErrorMessage());
-                    break;
-                default: System.err.println("Unexpected message type");
-            }
+
+                } else if (op.equals("Q")){ // N not sent
+                    System.err.println("Unexpected ACK");
+                }
+
+            case "E":
+                Error error = (Error) reply;
+                System.out.println(error.getErrorMessage()); // Print error message
+                return true; // Terminate
+
+            default: // Receive Q or N
+                System.err.println("Unexpected message type");
+
+            return false; // Reattempt message reception
         }
+    }
+
+    private static void sendMessage(Message message, DatagramSocket sock) throws IOException{
+        byte[] encodedMessage = message.encode();
+        DatagramPacket packet = new DatagramPacket(encodedMessage, encodedMessage.length);
+        sock.send(packet);
     }
 }
