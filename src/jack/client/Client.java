@@ -181,11 +181,11 @@ public class Client {
             case "A":
                 if(op.equals("N")){ // N sent
 
-                    ACK ack = (ACK) message; // N
+                    New n = (New) message; // N
                     ACK ackReply = (ACK) reply; // <name:port>
 
-                    if(ack.equals(ackReply)) { // <name>:<port> match N
-                        System.out.println(ack); // Print ACK
+                    if(n.getHost().equals(ackReply.getHost()) && n.getPort() == ackReply.getPort()) { // <name>:<port> match N
+                        System.out.println(ackReply); // Print ACK
                         return true; // Terminate
 
                     } else { // <name>:<port> does not match N
