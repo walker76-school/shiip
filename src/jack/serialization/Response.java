@@ -97,7 +97,7 @@ public class Response extends Message {
         StringBuilder builder = new StringBuilder();
         builder.append(String.format("%s ", getOperation()));
         for(String service : serviceList){
-            builder.append(String.format("[%s]", service));
+            builder.append(String.format("%s ", service));
         }
         return builder.toString().getBytes(ENC);
     }

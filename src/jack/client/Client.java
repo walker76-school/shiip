@@ -16,6 +16,8 @@ import java.net.InetAddress;
 import java.net.SocketTimeoutException;
 import java.util.*;
 
+import static jack.serialization.Constants.*;
+
 /**
  * A UDP client for Jack
  * @author Andrew Walker
@@ -25,12 +27,6 @@ public class Client {
     // Minimum number of parameters allowed
     private static final int MIN_ARGS = 3;
 
-    // Index of the host in the parameters
-    private static final int HOST_NDX = 0;
-
-    // Index of the port in the parameters
-    private static final int PORT_NDX = 1;
-
     // Index of the op in the parameters
     private static final int OP_NDX = 2;
 
@@ -39,6 +35,9 @@ public class Client {
 
     // Max length of message
     private static final int MAX_LENGTH = 65507;
+
+    // Maximum number of times the client can retransmit
+    private static final int MAX_RETRANSMIT = 3;
 
     public static void main(String[] args) {
         if(args.length < MIN_ARGS){
@@ -64,7 +63,7 @@ public class Client {
                         done = handleReply(args[OP_NDX], message, reply);
 
                     } else { // If the socket experiences a timeout then retransmit
-                        if(retransmitCount >= 3){
+                        if(retransmitCount >= MAX_RETRANSMIT){
                             System.err.println("Max retransmit limit reached");
                             return;
                         } else {
@@ -82,6 +81,12 @@ public class Client {
         }
     }
 
+    /**
+     * Connects the datagram socket to the given host and port
+     * @param args the command line args
+     * @return a datagram socket connected to th given host and port
+     * @throws IOException if communication problem
+     */
     private static DatagramSocket connectSocket(String[] args) throws IOException{
         DatagramSocket sock = new DatagramSocket();
 
@@ -95,16 +100,26 @@ public class Client {
         return sock;
     }
 
+    /**
+     * Constructs the proper message from the command line args
+     * @param args the command line args
+     * @return the proper message
+     */
     private static Message constructMessage(String[] args) {
         Message message = null;
         switch (args[OP_NDX]) {
-            case "Q": message = buildQuery(args); break;
-            case "N": message = buildNew(args); break;
+            case QUERY_OP: message = buildQuery(args); break;
+            case NEW_OP: message = buildNew(args); break;
             default: System.err.println("Bad parameters: Invalid op");
         }
         return message;
     }
 
+    /**
+     * Builds a Query from the command line args
+     * @param args the command line args
+     * @return Query
+     */
     private static Query buildQuery(String[] args){
         if(args.length != 4){
             System.err.println("Bad parameters: Invalid payload");
@@ -114,6 +129,11 @@ public class Client {
         return new Query(args[PAYLOAD_NDX]);
     }
 
+    /**
+     * Builds a New from the command line args
+     * @param args the command line args
+     * @return New
+     */
     private static New buildNew(String[] args){
         if(args.length != 4){
             System.err.println("Bad parameters: Invalid payload");
@@ -121,13 +141,13 @@ public class Client {
         }
 
         String payload = args[PAYLOAD_NDX];
-        String[] tokens = payload.split(":");
-        if(tokens.length != 2){
+        String[] tokens = payload.split(SERVICE_REGEX);
+        if(tokens.length != SERVICE_TOKEN_LEN){
             System.err.println("Bad parameters: Invalid payload");
             return null;
         }
-        String host = tokens[0];
-        String portString = tokens[1];
+        String host = tokens[HOST_NDX];
+        String portString = tokens[PORT_NDX];
 
         int port;
         try{
@@ -142,6 +162,7 @@ public class Client {
 
     /**
      * Retrieves the next message from the server
+     * @param socket the socket to receive from
      * @return the next message from the server
      */
     private static Message getMessage(DatagramSocket socket) throws IOException {
@@ -155,6 +176,7 @@ public class Client {
             // Check if from same host
             if(!packet.getAddress().equals(socket.getInetAddress()) || packet.getPort() != socket.getPort()){
                 System.err.println("Unexpected message source: " + message);
+                return null;
             }
 
             return message;
@@ -166,20 +188,28 @@ public class Client {
         }
     }
 
+    /**
+     * Handles the reply from the server
+     * @param op the op of the original message
+     * @param message the original message
+     * @param reply the reply from the server
+     * @return if the client can terminate
+     * @throws IOException if communication problem
+     */
     private static boolean handleReply(String op, Message message, Message reply) throws IOException {
         switch (reply.getOperation()){
-            case "R":
-                if(op.equals("Q")){ // Q sent
+            case RESPONSE_OP:
+                if(op.equals(QUERY_OP)){ // Q sent
 
                     System.out.println(reply); // Print answer
                     return true; // Terminate
 
-                } else if (op.equals("N")){ // Q not sent
+                } else { // Q not sent
                     System.err.println("Unexpected Response");
                 }
 
-            case "A":
-                if(op.equals("N")){ // N sent
+            case ACK_OP:
+                if(op.equals(NEW_OP)){ // N sent
 
                     New n = (New) message; // N
                     ACK ackReply = (ACK) reply; // <name:port>
@@ -192,11 +222,11 @@ public class Client {
                         System.err.println("Unexpected ACK");
                     }
 
-                } else if (op.equals("Q")){ // N not sent
+                } else { // N not sent
                     System.err.println("Unexpected ACK");
                 }
 
-            case "E":
+            case ERROR_OP:
                 Error error = (Error) reply;
                 System.out.println(error.getErrorMessage()); // Print error message
                 return true; // Terminate
@@ -208,6 +238,12 @@ public class Client {
         }
     }
 
+    /**
+     * Sends a message to a socket
+     * @param message the Message to send
+     * @param sock socket to send the message on
+     * @throws IOException if communication problem
+     */
     private static void sendMessage(Message message, DatagramSocket sock) throws IOException{
         byte[] encodedMessage = message.encode();
         DatagramPacket packet = new DatagramPacket(encodedMessage, encodedMessage.length);

@@ -20,9 +20,6 @@ public class Constants {
     // Wildcard match on hosts
     public static final String WILDCARD = "*";
 
-    // Proper length of tokens for a service after splitting
-    public static final int SERVICE_TOKEN_LEN = 2;
-
     // Index in message for the op code
     public static final int OP_NDX = 0;
 
@@ -31,6 +28,9 @@ public class Constants {
 
     // Index for start of payload in message
     public static final int PAYLOAD_NDX = 2;
+
+    // Proper length of tokens for a service after splitting
+    public static final int SERVICE_TOKEN_LEN = 2;
 
     // Index for host after split
     public static final int HOST_NDX = 0;
