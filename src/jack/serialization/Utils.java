@@ -60,4 +60,14 @@ public class Utils {
         return new Service(host, port);
     }
 
+    public static void validateService(String service) throws IllegalArgumentException {
+        String[] serviceParts = service.split(SERVICE_REGEX);
+        if (serviceParts.length != SERVICE_TOKEN_LEN) {
+            throw new IllegalArgumentException("Invalid service - " + service);
+        }
+
+        Utils.validateHost(serviceParts[HOST_NDX]);
+        Utils.validatePort(serviceParts[PORT_NDX]);
+    }
+
 }

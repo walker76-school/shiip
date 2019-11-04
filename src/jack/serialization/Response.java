@@ -22,10 +22,10 @@ import static jack.serialization.Constants.*;
 public class Response extends Message {
 
     // Regex to split the services
-    private static final String SPLIT_REGEX = "]\\[";
+    private static final String SPLIT_REGEX = " ";
 
-    // Regex to trim the services for host:port extraction
-    private static final String STRIP_REGEX = "[\\[\\]]";
+    // Regex for payload
+    private static final String SERVICE_PAYLOAD_REGEX = "([a-zA-Z0-9.-]+:[0-9]+ )*";
 
     private Set<String> serviceList;
 
@@ -43,19 +43,15 @@ public class Response extends Message {
     protected Response(String payload) throws IllegalArgumentException {
         serviceList = new TreeSet<>();
         if(!payload.isEmpty()){
+
+            if(!payload.matches(SERVICE_PAYLOAD_REGEX)){
+                throw new IllegalArgumentException("Invalid payload - " + payload);
+            }
+
             String[] services = payload.split(SPLIT_REGEX);
             for (String service : services) {
-
-                String hostAndPort = service.replaceAll(STRIP_REGEX, "");
-                String[] serviceParts = hostAndPort.split(SERVICE_REGEX);
-                if (serviceParts.length != SERVICE_TOKEN_LEN) {
-                    throw new IllegalArgumentException("Invalid service - " + hostAndPort);
-                }
-
-                Utils.validateHost(serviceParts[HOST_NDX]);
-                Utils.validatePort(serviceParts[PORT_NDX]);
-
-                serviceList.add(hostAndPort);
+                Utils.validateService(service);
+                serviceList.add(service);
             }
         }
     }
