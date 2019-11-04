@@ -26,10 +26,10 @@ import java.util.logging.SimpleFormatter;
 public class Server {
 
     // Maximum size of Data frames
-    public static final int MAXDATASIZE = 16384;
+    public static final int MAXDATASIZE = 500;
 
     // Maximum interval to send Data frames
-    public static final int MINDATAINTERVAL = 2000;
+    public static final int MINDATAINTERVAL = 500;
 
     // Index of the port in args
     private static final int PORT_NDX = 0;
