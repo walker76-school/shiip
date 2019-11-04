@@ -1,3 +1,9 @@
+/*******************************************************
+ * Author: Andrew walker
+ * Assignment: Prog 4
+ * Class: Data Comm
+ *******************************************************/
+
 package jack.serialization;
 
 import static jack.serialization.Constants.*;
@@ -34,12 +40,7 @@ public class Query extends Message {
      * @throws IllegalArgumentException if search string fails validation, including null
      */
     public final void setSearchString(String searchString) throws IllegalArgumentException {
-        this.searchString = validateHost(searchString);
-    }
-
-    @Override
-    protected String validateHost(String host) throws IllegalArgumentException {
-        return host != null && host.equals(WILDCARD) ? host : super.validateHost(host);
+        this.searchString = Utils.validateQuery(searchString);
     }
 
     /**

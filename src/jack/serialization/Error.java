@@ -1,3 +1,9 @@
+/*******************************************************
+ * Author: Andrew walker
+ * Assignment: Prog 4
+ * Class: Data Comm
+ *******************************************************/
+
 package jack.serialization;
 
 import static jack.serialization.Constants.ENC;

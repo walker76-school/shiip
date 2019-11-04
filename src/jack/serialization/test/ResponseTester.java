@@ -13,6 +13,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * @author Ian Laird and Andrew Walker
+ */
 public class ResponseTester {
 
     // a valid port

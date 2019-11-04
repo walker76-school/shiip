@@ -12,6 +12,7 @@ import jack.serialization.Error;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,9 +53,13 @@ public class Server {
 
             while (true) { // Run forever, accepting and servicing connections
 
-                DatagramPacket packet = new DatagramPacket(inBuffer, inBuffer.length);
-                sock.receive(packet);
-                handleDatagram(packet, sock, logger);
+                try {
+                    DatagramPacket packet = new DatagramPacket(inBuffer, inBuffer.length);
+                    sock.receive(packet);
+                    handleDatagram(packet, sock, logger);
+                } catch (IOException e){
+                    logger.log(Level.WARNING, "Communication problem: " + e.getMessage());
+                }
 
             }
             /* NOT REACHED */
@@ -72,28 +77,25 @@ public class Server {
      * @param sock the socket received on
      * @param logger logger
      */
-    private static void handleDatagram(DatagramPacket packet, DatagramSocket sock, Logger logger) {
-        try{
+    private static void handleDatagram(DatagramPacket packet, DatagramSocket sock, Logger logger) throws IOException{
+        InetAddress address = packet.getAddress();
+        int port = packet.getPort();
+        Message message = getMessage(packet, address, port, sock, logger);
 
-            Message message = getMessage(packet, sock, logger);
+        if(message != null) {
 
-            if(message != null) {
-                switch (message.getOperation()) {
-                    case "N":
-                        handleNew(message, sock, logger);
-                        break;
-                    case "Q":
-                        handleQuery(message, sock, logger);
-                        break;
-                    default:
-                        String errorMessage = "Unexpected message type: " + message;
-                        handleError(errorMessage, sock, logger);
-                        break;
-                }
+            switch (message.getOperation()) {
+                case "N":
+                    handleNew(message, address, port, sock, logger);
+                    break;
+                case "Q":
+                    handleQuery(message, address, port, sock, logger);
+                    break;
+                default:
+                    String errorMessage = "Unexpected message type: " + message;
+                    handleError(errorMessage, address, port, sock, logger);
+                    break;
             }
-
-        } catch(Exception ex){
-            logger.log(Level.WARNING, "Communication problem: " + ex.getMessage());
         }
     }
 
@@ -105,13 +107,13 @@ public class Server {
      * @return a Message from the datagram
      * @throws IOException If communication issue
      */
-    private static Message getMessage(DatagramPacket packet, DatagramSocket sock, Logger logger) throws IOException {
+    private static Message getMessage(DatagramPacket packet, InetAddress address, int port, DatagramSocket sock, Logger logger) throws IOException {
         try{
             byte[] encodedMessage = Arrays.copyOfRange(packet.getData(), 0, packet.getLength());
             return Message.decode(encodedMessage);
         } catch (IllegalArgumentException e){
             String errorMessage = "Invalid message: " + e.getMessage();
-            handleError(errorMessage, sock, logger);
+            handleError(errorMessage, address, port, sock, logger);
             return null;
         }
     }
@@ -119,11 +121,13 @@ public class Server {
     /**
      * Handler for a New message
      * @param message the New message
-     * @param clntSock the socket received on
+     * @param address client address
+     * @param port client port
+     * @param sock the socket received on
      * @param logger logger
      * @throws IOException if communication issue
      */
-    private static void handleNew(Message message, DatagramSocket clntSock, Logger logger) throws IOException {
+    private static void handleNew(Message message, InetAddress address, int port, DatagramSocket sock, Logger logger) throws IOException {
         New n = (New) message;
         logger.log(Level.INFO, "Received message: " + n);
 
@@ -135,17 +139,19 @@ public class Server {
         logger.log(Level.INFO, ack.toString());
 
         // Send ACK
-        sendMessage(ack, clntSock);
+        sendMessage(ack, address, port, sock);
     }
 
     /**
      * Handler for a Query message
      * @param message the Query message
-     * @param clntSock the socket received on
+     * @param address client address
+     * @param port client port
+     * @param sock the socket received on
      * @param logger logger
      * @throws IOException if communication issue
      */
-    private static void handleQuery(Message message, DatagramSocket clntSock, Logger logger) throws IOException {
+    private static void handleQuery(Message message, InetAddress address, int port, DatagramSocket sock, Logger logger) throws IOException {
         Query query = (Query) message;
         logger.log(Level.INFO, "Received message: " + query);
 
@@ -163,36 +169,40 @@ public class Server {
         logger.log(Level.INFO, response.toString());
 
         // Send Response
-       sendMessage(response, clntSock);
+       sendMessage(response, address, port, sock);
     }
 
     /**
      * Handler for an error
      * @param errorMessage the error message
-     * @param clntSock the socket received on
+     * @param address client address
+     * @param port client port
+     * @param sock the socket received on
      * @param logger logger
      * @throws IOException if communication issue
      */
-    private static void handleError(String errorMessage, DatagramSocket clntSock, Logger logger) throws IOException {
+    private static void handleError(String errorMessage, InetAddress address, int port, DatagramSocket sock, Logger logger) throws IOException {
         logger.log(Level.WARNING, errorMessage);
 
         // Construct Error
         Error error = new Error(errorMessage);
 
         // Send Error
-        sendMessage(error, clntSock);
+        sendMessage(error, address, port, sock);
 
     }
 
     /**
      * Sends a message in a DatagramPacket
      * @param message the message to send
-     * @param clntSock the socket to send on
+     * @param address client address
+     * @param port client port
+     * @param sock the socket to send on
      * @throws IOException if communication issue
      */
-    private static void sendMessage(Message message, DatagramSocket clntSock) throws IOException{
+    private static void sendMessage(Message message, InetAddress address, int port, DatagramSocket sock) throws IOException{
         byte[] encodedError = message.encode();
-        DatagramPacket packet = new DatagramPacket(encodedError, encodedError.length);
-        clntSock.send(packet);
+        DatagramPacket packet = new DatagramPacket(encodedError, encodedError.length, address, port);
+        sock.send(packet);
     }
 }

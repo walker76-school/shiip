@@ -1,3 +1,9 @@
+/*******************************************************
+ * Author: Andrew walker
+ * Assignment: Prog 4
+ * Class: Data Comm
+ *******************************************************/
+
 package jack.serialization;
 
 import static jack.serialization.Constants.*;
@@ -30,13 +36,10 @@ public class ACK extends Message {
      */
     protected ACK(String payload) throws IllegalArgumentException {
 
-        String[] serviceTokens = payload.split(SERVICE_REGEX);
-        if(serviceTokens.length != SERVICE_TOKEN_LEN){
-            throw new IllegalArgumentException("Invalid service");
-        }
+        Service service = Utils.buildService(payload);
 
-        setHost(serviceTokens[HOST_NDX]);
-        setPort(validatePort(serviceTokens[PORT_NDX]));
+        setHost(service.getHost());
+        setPort(service.getPort());
 
     }
 
@@ -54,7 +57,7 @@ public class ACK extends Message {
      * @throws IllegalArgumentException if validation failure, including null host
      */
     public final void setHost(String host) throws IllegalArgumentException {
-        this.host = validateHost(host);
+        this.host = Utils.validateHost(host);
     }
 
     /**
@@ -71,7 +74,7 @@ public class ACK extends Message {
      * @throws IllegalArgumentException if validation fails
      */
     public final void setPort(int port) throws IllegalArgumentException {
-        this.port = validatePort(port);
+        this.port = Utils.validatePort(port);
     }
 
     /**

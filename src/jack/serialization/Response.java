@@ -1,3 +1,9 @@
+/*******************************************************
+ * Author: Andrew walker
+ * Assignment: Prog 4
+ * Class: Data Comm
+ *******************************************************/
+
 package jack.serialization;
 
 import java.util.*;
@@ -16,10 +22,10 @@ import static jack.serialization.Constants.*;
 public class Response extends Message {
 
     // Regex to split the services
-    private static final String SPLIT_REGEX = "]\\[";
+    private static final String SPLIT_REGEX = " ";
 
-    // Regex to trim the services for host:port extraction
-    private static final String STRIP_REGEX = "[\\[\\]]";
+    // Regex for payload
+    private static final String SERVICE_PAYLOAD_REGEX = "([a-zA-Z0-9.-]+:[0-9]+ )*";
 
     private Set<String> serviceList;
 
@@ -27,7 +33,7 @@ public class Response extends Message {
      * Construct response with empty host:port list
      */
     public Response() {
-        serviceList = new HashSet<>();
+        serviceList = new TreeSet<>();
     }
 
     /**
@@ -37,19 +43,15 @@ public class Response extends Message {
     protected Response(String payload) throws IllegalArgumentException {
         serviceList = new TreeSet<>();
         if(!payload.isEmpty()){
+
+            if(!payload.matches(SERVICE_PAYLOAD_REGEX)){
+                throw new IllegalArgumentException("Invalid payload - " + payload);
+            }
+
             String[] services = payload.split(SPLIT_REGEX);
             for (String service : services) {
-
-                String hostAndPort = service.replaceAll(STRIP_REGEX, "");
-                String[] serviceParts = hostAndPort.split(SERVICE_REGEX);
-                if (serviceParts.length != SERVICE_TOKEN_LEN) {
-                    throw new IllegalArgumentException("Invalid service - " + hostAndPort);
-                }
-
-                validateHost(serviceParts[HOST_NDX]);
-                validatePort(serviceParts[PORT_NDX]);
-
-                serviceList.add(hostAndPort);
+                Utils.validateService(service);
+                serviceList.add(service);
             }
         }
     }
@@ -72,7 +74,7 @@ public class Response extends Message {
      * @throws IllegalArgumentException if validation fails, including null host
      */
     public final void addService(String host, int port) throws IllegalArgumentException {
-        serviceList.add(String.format("%s:%d", validateHost(host), validatePort(port)));
+        serviceList.add(String.format("%s:%d", Utils.validateHost(host), Utils.validatePort(port)));
     }
 
     /**
@@ -97,7 +99,7 @@ public class Response extends Message {
         StringBuilder builder = new StringBuilder();
         builder.append(String.format("%s ", getOperation()));
         for(String service : serviceList){
-            builder.append(String.format("[%s]", service));
+            builder.append(String.format("%s ", service));
         }
         return builder.toString().getBytes(ENC);
     }

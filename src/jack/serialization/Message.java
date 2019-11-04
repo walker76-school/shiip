@@ -1,7 +1,10 @@
-package jack.serialization;
+/*******************************************************
+ * Author: Andrew walker
+ * Assignment: Prog 4
+ * Class: Data Comm
+ *******************************************************/
 
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
+package jack.serialization;
 
 import static jack.serialization.Constants.*;
 
@@ -43,47 +46,6 @@ public abstract class Message {
             case ERROR_OP: return new Error(payload);
             default: throw new IllegalArgumentException("Invalid op");
         }
-    }
-
-    /**
-     * Checks the validity of the port
-     * @param port port
-     * @throws IllegalArgumentException if invalid port
-     * @return validated port
-     */
-    protected int validatePort(int port) throws IllegalArgumentException{
-        if(port < PORT_LOW || port > PORT_HIGH){
-            throw new IllegalArgumentException("Invalid port: " + port);
-        }
-        return port;
-    }
-
-    /**
-     * Checks the validity of the port
-     * @param portString string representation of port
-     * @throws IllegalArgumentException if invalid port
-     * @return validated port
-     */
-    protected int validatePort(String portString) throws IllegalArgumentException{
-        try {
-            int port = Integer.parseInt(portString);
-            return validatePort(port);
-        } catch (NumberFormatException e){
-            throw new IllegalArgumentException("Invalid port: " + portString, e);
-        }
-    }
-
-    /**
-     * Checks the validity of the host
-     * @param host host
-     * @throws IllegalArgumentException if invalid host
-     * @return validated host
-     */
-    protected String validateHost(String host) throws IllegalArgumentException{
-        if(host == null || host.isEmpty() || !host.matches(HOST_REGEX)){
-            throw new IllegalArgumentException("Invalid host: " + host);
-        }
-        return host;
     }
 
     /**
