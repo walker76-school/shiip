@@ -78,12 +78,11 @@ public class Server {
      * @param logger logger
      */
     private static void handleDatagram(DatagramPacket packet, DatagramSocket sock, Logger logger) throws IOException{
-        Message message = getMessage(packet, sock, logger);
+        InetAddress address = packet.getAddress();
+        int port = packet.getPort();
+        Message message = getMessage(packet, address, port, sock, logger);
 
         if(message != null) {
-
-            InetAddress address = packet.getAddress();
-            int port = packet.getPort();
 
             switch (message.getOperation()) {
                 case "N":
@@ -108,14 +107,12 @@ public class Server {
      * @return a Message from the datagram
      * @throws IOException If communication issue
      */
-    private static Message getMessage(DatagramPacket packet, DatagramSocket sock, Logger logger) throws IOException {
+    private static Message getMessage(DatagramPacket packet, InetAddress address, int port, DatagramSocket sock, Logger logger) throws IOException {
         try{
             byte[] encodedMessage = Arrays.copyOfRange(packet.getData(), 0, packet.getLength());
             return Message.decode(encodedMessage);
         } catch (IllegalArgumentException e){
             String errorMessage = "Invalid message: " + e.getMessage();
-            InetAddress address = packet.getAddress();
-            int port = packet.getPort();
             handleError(errorMessage, address, port, sock, logger);
             return null;
         }

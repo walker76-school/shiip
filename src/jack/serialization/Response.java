@@ -1,3 +1,9 @@
+/*******************************************************
+ * Author: Andrew walker
+ * Assignment: Prog 4
+ * Class: Data Comm
+ *******************************************************/
+
 package jack.serialization;
 
 import java.util.*;
@@ -46,8 +52,8 @@ public class Response extends Message {
                     throw new IllegalArgumentException("Invalid service - " + hostAndPort);
                 }
 
-                validateHost(serviceParts[HOST_NDX]);
-                validatePort(serviceParts[PORT_NDX]);
+                Utils.validateHost(serviceParts[HOST_NDX]);
+                Utils.validatePort(serviceParts[PORT_NDX]);
 
                 serviceList.add(hostAndPort);
             }
@@ -72,7 +78,7 @@ public class Response extends Message {
      * @throws IllegalArgumentException if validation fails, including null host
      */
     public final void addService(String host, int port) throws IllegalArgumentException {
-        serviceList.add(String.format("%s:%d", validateHost(host), validatePort(port)));
+        serviceList.add(String.format("%s:%d", Utils.validateHost(host), Utils.validatePort(port)));
     }
 
     /**

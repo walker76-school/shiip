@@ -25,7 +25,7 @@ import static jack.serialization.Constants.*;
 public class Client {
 
     // Minimum number of parameters allowed
-    private static final int MIN_ARGS = 3;
+    private static final int MIN_ARGS = 4;
 
     // Index of the op in the parameters
     private static final int OP_NDX = 2;
@@ -38,6 +38,9 @@ public class Client {
 
     // Maximum number of times the client can retransmit
     private static final int MAX_RETRANSMIT = 3;
+
+    // Timeout for socket
+    private static final int TIMEOUT = 3000;
 
     public static void main(String[] args) {
         if(args.length < MIN_ARGS){
@@ -95,7 +98,7 @@ public class Client {
         int destPort = Integer.parseInt(args[PORT_NDX]); // Destination port
         sock.connect(destAddr, destPort);
 
-        sock.setSoTimeout(3000);
+        sock.setSoTimeout(TIMEOUT);
 
         return sock;
     }
@@ -107,11 +110,21 @@ public class Client {
      */
     private static Message constructMessage(String[] args) {
         Message message = null;
-        switch (args[OP_NDX]) {
-            case QUERY_OP: message = buildQuery(args); break;
-            case NEW_OP: message = buildNew(args); break;
-            default: System.err.println("Bad parameters: Invalid op");
+        try {
+            switch (args[OP_NDX]) {
+                case QUERY_OP:
+                    message = buildQuery(args);
+                    break;
+                case NEW_OP:
+                    message = buildNew(args);
+                    break;
+                default:
+                    System.err.println("Bad parameters: Invalid op");
+            }
+        } catch (IllegalArgumentException e){
+            System.err.println("Bad parameters: Invalid payload");
         }
+
         return message;
     }
 
@@ -120,13 +133,12 @@ public class Client {
      * @param args the command line args
      * @return Query
      */
-    private static Query buildQuery(String[] args){
-        if(args.length != 4){
-            System.err.println("Bad parameters: Invalid payload");
-            return null;
-        }
+    private static Query buildQuery(String[] args) throws IllegalArgumentException{
 
-        return new Query(args[PAYLOAD_NDX]);
+        // Validate search string
+        String searchString = Utils.validateQuery(args[PAYLOAD_NDX]);
+
+        return new Query(searchString);
     }
 
     /**
@@ -134,30 +146,12 @@ public class Client {
      * @param args the command line args
      * @return New
      */
-    private static New buildNew(String[] args){
-        if(args.length != 4){
-            System.err.println("Bad parameters: Invalid payload");
-            return null;
-        }
+    private static New buildNew(String[] args) throws IllegalArgumentException {
 
         String payload = args[PAYLOAD_NDX];
-        String[] tokens = payload.split(SERVICE_REGEX);
-        if(tokens.length != SERVICE_TOKEN_LEN){
-            System.err.println("Bad parameters: Invalid payload");
-            return null;
-        }
-        String host = tokens[HOST_NDX];
-        String portString = tokens[PORT_NDX];
+        Service service = Utils.buildService(payload);
 
-        int port;
-        try{
-            port = Integer.parseInt(portString);
-        } catch (NumberFormatException e){
-            System.err.println("Bad parameters: Invalid port");
-            return null;
-        }
-
-        return new New(host, port);
+        return new New(service.getHost(), service.getPort());
     }
 
     /**

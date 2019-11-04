@@ -4,7 +4,7 @@
  * Class: Data Comm
  *******************************************************/
 
-package jack.server;
+package jack.serialization;
 
 /**
  * Representation of a service
