@@ -33,7 +33,7 @@ public class Response extends Message {
      * Construct response with empty host:port list
      */
     public Response() {
-        serviceList = new HashSet<>();
+        serviceList = new TreeSet<>();
     }
 
     /**
