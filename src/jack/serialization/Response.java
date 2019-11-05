@@ -6,7 +6,10 @@
 
 package jack.serialization;
 
+import jack.utils.Utils;
+
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static jack.serialization.Constants.*;
 
@@ -27,13 +30,13 @@ public class Response extends Message {
     // Regex for payload
     private static final String SERVICE_PAYLOAD_REGEX = "([a-zA-Z0-9.-]+:[0-9]+ )*";
 
-    private Set<String> serviceList;
+    private Set<String> serviceSet;
 
     /**
      * Construct response with empty host:port list
      */
     public Response() {
-        serviceList = new TreeSet<>();
+        serviceSet = new TreeSet<>();
     }
 
     /**
@@ -41,7 +44,7 @@ public class Response extends Message {
      * @param payload payload
      */
     protected Response(String payload) throws IllegalArgumentException {
-        serviceList = new TreeSet<>();
+        serviceSet = new TreeSet<>();
         if(!payload.isEmpty()){
 
             if(!payload.matches(SERVICE_PAYLOAD_REGEX)){
@@ -51,7 +54,7 @@ public class Response extends Message {
             String[] services = payload.split(SPLIT_REGEX);
             for (String service : services) {
                 Utils.validateService(service);
-                serviceList.add(service);
+                serviceSet.add(service);
             }
         }
     }
@@ -63,7 +66,7 @@ public class Response extends Message {
      * @return service list
      */
     public List<String> getServiceList() {
-        return new ArrayList<>(serviceList);
+        return serviceSet.stream().collect(Collectors.toUnmodifiableList());
     }
 
     /**
@@ -74,7 +77,7 @@ public class Response extends Message {
      * @throws IllegalArgumentException if validation fails, including null host
      */
     public final void addService(String host, int port) throws IllegalArgumentException {
-        serviceList.add(String.format("%s:%d", Utils.validateHost(host), Utils.validatePort(port)));
+        serviceSet.add(String.format("%s:%d", Utils.validateHost(host), Utils.validatePort(port)));
     }
 
     /**
@@ -87,7 +90,7 @@ public class Response extends Message {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder("RESPONSE ");
-        for (String service : serviceList){
+        for (String service : serviceSet){
             builder.append(String.format("[%s]", service));
         }
 
@@ -98,7 +101,7 @@ public class Response extends Message {
     public byte[] encode() {
         StringBuilder builder = new StringBuilder();
         builder.append(String.format("%s ", getOperation()));
-        for(String service : serviceList){
+        for(String service : serviceSet){
             builder.append(String.format("%s ", service));
         }
         return builder.toString().getBytes(ENC);
@@ -116,11 +119,11 @@ public class Response extends Message {
 
         Response response = (Response) o;
 
-        return serviceList.equals(response.serviceList);
+        return serviceSet.equals(response.serviceSet);
     }
 
     @Override
     public int hashCode() {
-        return serviceList.hashCode();
+        return serviceSet.hashCode();
     }
 }

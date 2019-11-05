@@ -1,4 +1,4 @@
-package jack.serialization;
+package jack.utils;
 
 import static jack.serialization.Constants.*;
 

@@ -6,6 +6,8 @@
 
 package jack.serialization;
 
+import jack.utils.Utils;
+
 import static jack.serialization.Constants.*;
 
 /**

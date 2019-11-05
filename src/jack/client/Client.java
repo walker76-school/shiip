@@ -8,6 +8,8 @@ package jack.client;
 
 import jack.serialization.*;
 import jack.serialization.Error;
+import jack.utils.Service;
+import jack.utils.Utils;
 
 import java.io.IOException;
 import java.net.DatagramPacket;

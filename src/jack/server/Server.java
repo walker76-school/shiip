@@ -8,14 +8,14 @@ package jack.server;
 
 import jack.serialization.*;
 import jack.serialization.Error;
+import jack.utils.Service;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.logging.*;
 import java.util.stream.Collectors;
 
 import static jack.serialization.Constants.NEW_OP;
@@ -37,12 +37,24 @@ public class Server {
     // Number of args
     private static final int NUM_ARGS = 1;
 
+    // File for log
+    private static final String LOG_FILE = "./jack.log";
+
     private static Set<Service> services;
 
     public static void main(String[] args) {
 
         // Establish Logger
         Logger logger = Logger.getLogger("JackServer");
+        try {
+            logger.setUseParentHandlers(false);
+            FileHandler handler = new FileHandler(LOG_FILE);
+            handler.setFormatter(new SimpleFormatter());
+            logger.addHandler(handler);
+        } catch (IOException e){
+            logger.log(Level.WARNING, e.getMessage());
+            return;
+        }
 
         // Test for correct # of args
         if(args.length != NUM_ARGS){
