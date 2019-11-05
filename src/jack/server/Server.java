@@ -18,6 +18,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static jack.serialization.Constants.NEW_OP;
+import static jack.serialization.Constants.QUERY_OP;
+
 /**
  * SHiiP server for serving files to a client
  *
@@ -77,7 +80,7 @@ public class Server {
      * @param sock the socket received on
      * @param logger logger
      */
-    private static void handleDatagram(DatagramPacket packet, DatagramSocket sock, Logger logger) throws IOException{
+    private static void handleDatagram(DatagramPacket packet, DatagramSocket sock, Logger logger) throws IOException {
         InetAddress address = packet.getAddress();
         int port = packet.getPort();
         Message message = getMessage(packet, address, port, sock, logger);
@@ -85,13 +88,13 @@ public class Server {
         if(message != null) {
 
             switch (message.getOperation()) {
-                case "N":
+                case NEW_OP:
                     handleNew(message, address, port, sock, logger);
                     break;
-                case "Q":
+                case QUERY_OP:
                     handleQuery(message, address, port, sock, logger);
                     break;
-                default:
+                default: // R, A, or E
                     String errorMessage = "Unexpected message type: " + message;
                     handleError(errorMessage, address, port, sock, logger);
                     break;
@@ -157,7 +160,7 @@ public class Server {
 
         String searchString = query.getSearchString();
 
-        // IS THIS CASE INSENSITIVE?
+        // Case sensitive
         List<Service> matches = services.stream()
                 .filter(x -> x.getHost().contains(searchString) || searchString.equals("*"))
                 .sorted(Comparator.comparing(Service::getHost))
@@ -200,7 +203,7 @@ public class Server {
      * @param sock the socket to send on
      * @throws IOException if communication issue
      */
-    private static void sendMessage(Message message, InetAddress address, int port, DatagramSocket sock) throws IOException{
+    private static void sendMessage(Message message, InetAddress address, int port, DatagramSocket sock) throws IOException {
         byte[] encodedError = message.encode();
         DatagramPacket packet = new DatagramPacket(encodedError, encodedError.length, address, port);
         sock.send(packet);

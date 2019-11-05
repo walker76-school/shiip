@@ -25,7 +25,7 @@ import static jack.serialization.Constants.*;
 public class Client {
 
     // Minimum number of parameters allowed
-    private static final int MIN_ARGS = 4;
+    private static final int MIN_ARGS = 3;
 
     // Index of the op in the parameters
     private static final int OP_NDX = 2;
@@ -90,7 +90,7 @@ public class Client {
      * @return a datagram socket connected to th given host and port
      * @throws IOException if communication problem
      */
-    private static DatagramSocket connectSocket(String[] args) throws IOException{
+    private static DatagramSocket connectSocket(String[] args) throws IOException {
         DatagramSocket sock = new DatagramSocket();
 
         // Connect to the server
@@ -111,18 +111,34 @@ public class Client {
     private static Message constructMessage(String[] args) {
         Message message = null;
         try {
+            String payload = args[PAYLOAD_NDX];
             switch (args[OP_NDX]) {
                 case QUERY_OP:
-                    message = buildQuery(args);
+                    message = buildQuery(payload);
+                    break;
+                case RESPONSE_OP:
+                    message = buildResponse(payload);
                     break;
                 case NEW_OP:
-                    message = buildNew(args);
+                    message = buildNew(payload);
+                    break;
+                case ACK_OP:
+                    message = buildAck(payload);
+                    break;
+                case ERROR_OP:
+                    message = buildError(payload);
                     break;
                 default:
                     System.err.println("Bad parameters: Invalid op");
             }
         } catch (IllegalArgumentException e){
             System.err.println("Bad parameters: Invalid payload");
+        } catch (IndexOutOfBoundsException e){
+            if (args[OP_NDX].equals(RESPONSE_OP)) {
+                return new Response();
+            } else {
+                System.err.println("Bad parameters: Missing payload");
+            }
         }
 
         return message;
@@ -130,28 +146,62 @@ public class Client {
 
     /**
      * Builds a Query from the command line args
-     * @param args the command line args
+     * @param payload the command line payload
      * @return Query
+     * @throws IllegalArgumentException if invalid payload
      */
-    private static Query buildQuery(String[] args) throws IllegalArgumentException{
-
-        // Validate search string
-        String searchString = Utils.validateQuery(args[PAYLOAD_NDX]);
-
-        return new Query(searchString);
+    private static Query buildQuery(String payload) throws IllegalArgumentException{
+        return new Query(Utils.validateQuery(payload));
     }
 
     /**
      * Builds a New from the command line args
-     * @param args the command line args
+     * @param payload the command line args payload
      * @return New
+     * @throws IllegalArgumentException if invalid payload
      */
-    private static New buildNew(String[] args) throws IllegalArgumentException {
+    private static New buildNew(String payload) throws IllegalArgumentException {
 
-        String payload = args[PAYLOAD_NDX];
         Service service = Utils.buildService(payload);
 
         return new New(service.getHost(), service.getPort());
+    }
+
+    /**
+     * Builds a Response from the command line args
+     * @param payload the command line payload
+     * @return Response
+     * @throws IllegalArgumentException if invalid payload
+     */
+    private static Response buildResponse(String payload) throws IllegalArgumentException {
+        Response response = new Response();
+        String[] services = payload.split(" ");
+        for(String serviceString : services){
+            Service service = Utils.buildService(serviceString);
+            response.addService(service.getHost(), service.getPort());
+        }
+        return response;
+    }
+
+    /**
+     * Builds a ACK from the command line args
+     * @param payload the command line payload
+     * @return ACK
+     * @throws IllegalArgumentException if invalid payload
+     */
+    private static ACK buildAck(String payload) throws IllegalArgumentException {
+        Service service = Utils.buildService(payload);
+        return new ACK(service.getHost(), service.getPort());
+    }
+
+    /**
+     * Builds a Error from the command line args
+     * @param payload the command line payload
+     * @return Error
+     * @throws IllegalArgumentException if invalid payload
+     */
+    private static Error buildError(String payload) throws IllegalArgumentException {
+        return new Error(payload);
     }
 
     /**
@@ -188,9 +238,8 @@ public class Client {
      * @param message the original message
      * @param reply the reply from the server
      * @return if the client can terminate
-     * @throws IOException if communication problem
      */
-    private static boolean handleReply(String op, Message message, Message reply) throws IOException {
+    private static boolean handleReply(String op, Message message, Message reply) {
         switch (reply.getOperation()){
             case RESPONSE_OP:
                 if(op.equals(QUERY_OP)){ // Q sent
