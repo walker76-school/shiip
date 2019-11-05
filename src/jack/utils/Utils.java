@@ -46,7 +46,7 @@ public class Utils {
     }
 
     public static String validateQuery(String host) throws IllegalArgumentException {
-        return host != null && host.equals(WILDCARD) ? host : validateHost(host);
+        return host != null && (host.isEmpty() || host.equals(WILDCARD)) ? host : validateHost(host);
     }
 
     public static Service buildService(String payload) throws IllegalArgumentException {

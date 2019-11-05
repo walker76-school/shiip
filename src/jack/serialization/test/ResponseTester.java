@@ -158,4 +158,22 @@ public class ResponseTester {
             assertEquals(r1.hashCode(), r2.hashCode());
         }
     }
+
+    @Test
+    public void testOversizedPayload(){
+        Response response = new Response();
+        // 65,507 - 2 = 65,505
+        for(int i = 0; i < 6550; i++){
+            String host = String.valueOf(i);
+            int originalLength = host.length();
+            for(int j = 0; j < 7 - originalLength; j++){
+                host = host.concat("A");
+            }
+            response.addService(host, 1);
+        }
+
+        assertThrows(IllegalArgumentException.class, () -> {
+           response.addService("AAAA", 1);
+        });
+    }
 }

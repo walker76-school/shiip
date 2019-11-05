@@ -6,6 +6,7 @@
 
 package jack.serialization.test;
 
+import jack.serialization.Error;
 import jack.serialization.Query;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -78,5 +79,17 @@ public class QueryTester {
                 () -> assertEquals("QUERY " + queryStr2, q2.toString())
         );
 
+    }
+
+    @Test
+    public void testOversizedQueryStringConstructor(){
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < 65506; i++) {
+            builder.append("A");
+        }
+        String queryString = builder.toString();
+        assertThrows(IllegalArgumentException.class, () -> {
+            new Query(queryString);
+        });
     }
 }

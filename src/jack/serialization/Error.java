@@ -6,8 +6,7 @@
 
 package jack.serialization;
 
-import static jack.serialization.Constants.ENC;
-import static jack.serialization.Constants.ERROR_OP;
+import static jack.serialization.Constants.*;
 
 /**
  * Error message
@@ -43,6 +42,10 @@ public class Error extends Message {
     public final void setErrorMessage(String errorMessage) throws IllegalArgumentException {
         if (errorMessage == null || errorMessage.isEmpty()){
             throw new IllegalArgumentException("Error message cannot be null");
+        }
+
+        if(errorMessage.length() > MAX_PAYLOAD_LENGTH){
+            throw new IllegalArgumentException("Error message is too long");
         }
 
         this.errorMessage = errorMessage;

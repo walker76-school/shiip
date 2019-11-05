@@ -68,4 +68,10 @@ public class Constants {
     // Operation for Response
     public static final String RESPONSE_OP = "R";
 
+    // Maximum allowed payload length
+    public static final int MAX_PAYLOAD_LENGTH = 65502;
+
+    // Max length of message
+    public static final int MAX_LENGTH = 65507;
+
 }

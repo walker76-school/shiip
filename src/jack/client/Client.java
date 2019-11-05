@@ -138,6 +138,8 @@ public class Client {
         } catch (IndexOutOfBoundsException e){
             if (args[OP_NDX].equals(RESPONSE_OP)) {
                 return new Response();
+            } else if (args[OP_NDX].equals(QUERY_OP)){
+                return new Query("");
             } else {
                 System.err.println("Bad parameters: Missing payload");
             }

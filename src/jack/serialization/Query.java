@@ -42,6 +42,10 @@ public class Query extends Message {
      * @throws IllegalArgumentException if search string fails validation, including null
      */
     public final void setSearchString(String searchString) throws IllegalArgumentException {
+        if(searchString != null && searchString.length() > MAX_PAYLOAD_LENGTH){
+            throw new IllegalArgumentException("Oversized payload");
+        }
+
         this.searchString = Utils.validateQuery(searchString);
     }
 

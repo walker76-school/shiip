@@ -60,7 +60,12 @@ public class ACK extends Message {
      * @throws IllegalArgumentException if validation failure, including null host
      */
     public final void setHost(String host) throws IllegalArgumentException {
+        String oldhost = this.host;
         this.host = Utils.validateHost(host);
+        if(encode().length > MAX_LENGTH){
+            this.host = oldhost;
+            throw new IllegalArgumentException("Oversized host");
+        }
     }
 
     /**
@@ -77,7 +82,12 @@ public class ACK extends Message {
      * @throws IllegalArgumentException if validation fails
      */
     public final void setPort(int port) throws IllegalArgumentException {
+        int oldport = this.port;
         this.port = Utils.validatePort(port);
+        if(encode().length > MAX_LENGTH){
+            this.port = oldport;
+            throw new IllegalArgumentException("Oversized port");
+        }
     }
 
     /**

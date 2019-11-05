@@ -6,6 +6,7 @@
 
 package jack.serialization;
 
+import jack.utils.Service;
 import jack.utils.Utils;
 
 import java.util.*;
@@ -52,9 +53,9 @@ public class Response extends Message {
             }
 
             String[] services = payload.split(SPLIT_REGEX);
-            for (String service : services) {
-                Utils.validateService(service);
-                serviceSet.add(service);
+            for (String serviceString : services) {
+                Service service = Utils.buildService(serviceString);
+                addService(service.getHost(), service.getPort());
             }
         }
     }
@@ -77,7 +78,12 @@ public class Response extends Message {
      * @throws IllegalArgumentException if validation fails, including null host
      */
     public final void addService(String host, int port) throws IllegalArgumentException {
-        serviceSet.add(String.format("%s:%d", Utils.validateHost(host), Utils.validatePort(port)));
+        String service = String.format("%s:%d", Utils.validateHost(host), Utils.validatePort(port));
+        serviceSet.add(service);
+        if(encode().length > MAX_LENGTH){
+            serviceSet.remove(service);
+            throw new IllegalArgumentException("Oversized payload");
+        }
     }
 
     /**
