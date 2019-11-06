@@ -1,6 +1,6 @@
 /*******************************************************
  * Author: Andrew walker
- * Assignment: Prog 5
+ * Assignment: Prog 4
  * Class: Data Comm
  *******************************************************/
 

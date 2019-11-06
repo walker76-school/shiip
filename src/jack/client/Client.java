@@ -275,7 +275,7 @@ public class Client {
 
             case ERROR_OP:
                 Error error = (Error) reply;
-                System.out.println(error.getErrorMessage()); // Print error message
+                System.err.println(error.getErrorMessage()); // Print error message
                 return true; // Terminate
 
             default: // Receive Q or N
