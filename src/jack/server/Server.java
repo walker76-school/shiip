@@ -74,6 +74,8 @@ public class Server {
                     handleDatagram(packet, sock, logger);
                 } catch (IOException e){
                     logger.log(Level.WARNING, "Communication problem: " + e.getMessage());
+                } catch (IllegalArgumentException e){
+                    logger.log(Level.WARNING, "Invalid message: " + e.getMessage());
                 }
 
             }
