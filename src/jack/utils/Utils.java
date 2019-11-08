@@ -1,7 +1,16 @@
+/*******************************************************
+ * Author: Andrew walker
+ * Assignment: Prog 4
+ * Class: Data Comm
+ *******************************************************/
+
 package jack.utils;
 
 import static jack.serialization.Constants.*;
 
+/**
+ * Utility class for handling payloads
+ */
 public class Utils {
 
     /**
@@ -45,10 +54,23 @@ public class Utils {
         return host;
     }
 
-    public static String validateQuery(String host) throws IllegalArgumentException {
-        return host != null && (host.isEmpty() || host.equals(WILDCARD)) ? host : validateHost(host);
+    /**
+     *
+     * Checks the validity of the query
+     * @param query query
+     * @throws IllegalArgumentException if invalid query
+     * @return validated query
+     */
+    public static String validateQuery(String query) throws IllegalArgumentException {
+        return query != null && (query.isEmpty() || query.equals(WILDCARD)) ? query : validateHost(query);
     }
 
+    /**
+     * Constructs a service from a payload
+     * @param payload the payload for a service
+     * @return a service from payload
+     * @throws IllegalArgumentException if invalid service
+     */
     public static Service buildService(String payload) throws IllegalArgumentException {
         String[] tokens = payload.split(SERVICE_REGEX);
         if(tokens.length != SERVICE_TOKEN_LEN){
@@ -60,6 +82,11 @@ public class Utils {
         return new Service(host, port);
     }
 
+    /**
+     * Validates that a string is a service
+     * @param service the string representation
+     * @throws IllegalArgumentException if invalid service
+     */
     public static void validateService(String service) throws IllegalArgumentException {
         String[] serviceParts = service.split(SERVICE_REGEX);
         if (serviceParts.length != SERVICE_TOKEN_LEN) {
