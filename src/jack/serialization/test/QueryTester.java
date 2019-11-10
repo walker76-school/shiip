@@ -92,4 +92,11 @@ public class QueryTester {
             new Query(queryString);
         });
     }
+
+    @Test
+    @DisplayName("Empty search string")
+    public void testEmpty(){
+        assertDoesNotThrow(() -> new Query(""));
+    }
+
 }
