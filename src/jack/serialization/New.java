@@ -18,6 +18,9 @@ import static jack.serialization.Constants.*;
  */
 public class New extends Message{
 
+    // Constant for hashing
+    private static final int HASH_CONSTANT = 14;
+
     private String host;
     private int port;
 
@@ -126,6 +129,7 @@ public class New extends Message{
     public int hashCode() {
         int result = host.hashCode();
         result = HASH_PRIME * result + port;
+        result *= HASH_CONSTANT;
         return result;
     }
 }

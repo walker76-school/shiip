@@ -31,7 +31,7 @@ public class Response extends Message {
     // Regex for payload
     private static final String SERVICE_PAYLOAD_REGEX = "([a-zA-Z0-9.-]+:[0-9]+ )*";
 
-    private Set<String> serviceSet;
+    private Set<Service> serviceSet;
 
     /**
      * Construct response with empty host:port list
@@ -55,7 +55,7 @@ public class Response extends Message {
             String[] services = payload.split(SPLIT_REGEX);
             for (String serviceString : services) {
                 Service service = Utils.buildService(serviceString);
-                addService(service.getHost(), service.getPort());
+                serviceSet.add(service);
             }
         }
     }
@@ -67,7 +67,9 @@ public class Response extends Message {
      * @return service list
      */
     public List<String> getServiceList() {
-        return serviceSet.stream().collect(Collectors.toUnmodifiableList());
+        return serviceSet.stream()
+                .map(x -> String.format("%s:%d", x.getHost(), x.getPort()))
+                .collect(Collectors.toUnmodifiableList());
     }
 
     /**
@@ -78,7 +80,9 @@ public class Response extends Message {
      * @throws IllegalArgumentException if validation fails, including null host
      */
     public final void addService(String host, int port) throws IllegalArgumentException {
-        String service = String.format("%s:%d", Utils.validateHost(host), Utils.validatePort(port));
+        Utils.validateHost(host);
+        Utils.validatePort(port);
+        Service service = new Service(host, port);
         serviceSet.add(service);
         if(encode().length > MAX_LENGTH){
             serviceSet.remove(service);
@@ -96,8 +100,8 @@ public class Response extends Message {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder("RESPONSE ");
-        for (String service : serviceSet){
-            builder.append(String.format("[%s]", service));
+        for (Service service : serviceSet){
+            builder.append(String.format("[%s:%d]", service.getHost(), service.getPort()));
         }
 
         return builder.toString();
@@ -107,8 +111,8 @@ public class Response extends Message {
     public byte[] encode() {
         StringBuilder builder = new StringBuilder();
         builder.append(String.format("%s ", getOperation()));
-        for(String service : serviceSet){
-            builder.append(String.format("%s ", service));
+        for(Service service : serviceSet){
+            builder.append(String.format("%s:%d ", service.getHost(), service.getPort()));
         }
         return builder.toString().getBytes(ENC);
     }

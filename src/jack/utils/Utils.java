@@ -62,7 +62,7 @@ public class Utils {
      * @return validated query
      */
     public static String validateQuery(String query) throws IllegalArgumentException {
-        return query != null && (query.isEmpty() || query.equals(WILDCARD)) ? query : validateHost(query);
+        return query != null && query.equals(WILDCARD) ? query : validateHost(query);
     }
 
     /**

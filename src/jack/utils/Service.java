@@ -10,7 +10,7 @@ package jack.utils;
  * Representation of a service
  * @author Andrew Walker
  */
-public class Service {
+public class Service implements Comparable<Service> {
     private String host;
     private int port;
 
@@ -54,5 +54,31 @@ public class Service {
      */
     public void setPort(int port) {
         this.port = port;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Service service = (Service) o;
+
+        if (port != service.port) return false;
+        return host.equals(service.host);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = host.hashCode();
+        result = 31 * result + port;
+        return result;
+    }
+
+    @Override
+    public int compareTo(Service that) {
+        if (host.equals(that.host)) {
+            return port - that.port;
+        }
+        return host.compareTo(that.host);
     }
 }
