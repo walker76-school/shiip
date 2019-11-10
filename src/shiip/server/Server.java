@@ -6,6 +6,7 @@
 
 package shiip.server;
 
+import shiip.server.protocols.ShiipServerProtocol;
 import tls.TLSFactory;
 
 import java.io.IOException;

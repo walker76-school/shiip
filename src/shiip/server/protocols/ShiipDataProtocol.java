@@ -4,7 +4,7 @@
  * Class: Data Comm
  *******************************************************/
 
-package shiip.server;
+package shiip.server.protocols;
 
 import shiip.serialization.Framer;
 import shiip.serialization.Data;

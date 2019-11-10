@@ -4,7 +4,7 @@
  * Class: Data Comm
  *******************************************************/
 
-package shiip.server;
+package shiip.server.protocols;
 
 import com.twitter.hpack.Decoder;
 import com.twitter.hpack.Encoder;

@@ -1,4 +1,4 @@
-package shiip.server;
+package shiip.server.models;
 
 import com.twitter.hpack.Decoder;
 import com.twitter.hpack.Encoder;

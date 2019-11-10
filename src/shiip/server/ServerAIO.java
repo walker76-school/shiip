@@ -1,8 +1,10 @@
 package shiip.server;
 
 import com.twitter.hpack.Decoder;
-import com.twitter.hpack.Encoder;
 import shiip.serialization.*;
+import shiip.server.handlers.ConnectionHandler;
+import shiip.server.models.ClientConnectionContext;
+import shiip.server.protocols.ShiipDataProtocol;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,7 +15,6 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -76,42 +77,6 @@ public class ServerAIO {
             logger.log(Level.WARNING, "Server Interrupted", e);
         } catch (IOException e){
             logger.log(Level.WARNING, "Connection problem: " + e.getMessage());
-        }
-    }
-
-    static class ConnectionHandler implements CompletionHandler<AsynchronousSocketChannel, Void> {
-
-        private AsynchronousServerSocketChannel listenChannel;
-        private Logger logger;
-
-        public ConnectionHandler(AsynchronousServerSocketChannel listenChannel, Logger logger) {
-            this.listenChannel = listenChannel;
-            this.logger = logger;
-        }
-
-        @Override
-        public void completed(AsynchronousSocketChannel clntChan, Void attachment) {
-            listenChannel.accept(null, this);
-            handleAccept(clntChan);
-        }
-
-        @Override
-        public void failed(Throwable e, Void attachment) {
-            logger.log(Level.WARNING, "Close Failed", e);
-        }
-
-        /**
-         * Called after each accept completion
-         *
-         * @param clntChan channel of new client
-         */
-        public void handleAccept(final AsynchronousSocketChannel clntChan) {
-            ByteBuffer buf = ByteBuffer.allocateDirect(BUFSIZE);
-
-            // Create Connection Context
-            ClientConnectionContext connectionContext = new ClientConnectionContext(clntChan);
-
-            clntChan.read(buf, buf, new ReadHandler(connectionContext, logger));
         }
     }
 
@@ -306,45 +271,6 @@ public class ServerAIO {
          */
         private void handleWindowUpdate(Message m) {
             logger.log(Level.INFO, "Received message: " + m);
-        }
-    }
-
-    public static class WriteHandler implements CompletionHandler<Integer, ByteBuffer> {
-
-        private AsynchronousSocketChannel clntChan;
-        private Logger logger;
-        private Deframer deframer;
-
-        public WriteHandler(AsynchronousSocketChannel clntChan, Logger logger) {
-            this.clntChan = clntChan;
-            this.logger = logger;
-        }
-
-        @Override
-        public void completed(Integer bytesWritten, ByteBuffer buf) {
-            try {
-                handleWrite(clntChan, buf);
-            } catch (IOException e) {
-                logger.log(Level.WARNING, "Handle Write Failed", e);
-            }
-        }
-
-        @Override
-        public void failed(Throwable ex, ByteBuffer buf) {
-            try {
-                clntChan.close();
-            } catch (IOException e) {
-                logger.log(Level.WARNING, "Close Failed", e);
-            }
-        }
-
-        private void handleWrite(final AsynchronousSocketChannel clntChan, ByteBuffer buf) throws IOException {
-            if (buf.hasRemaining()) { // More to write
-                clntChan.write(buf, buf, this);
-            } else { // Back to reading
-                buf.clear();
-                clntChan.read(buf, buf, new ReadHandler(clntChan, logger));
-            }
         }
     }
 }
