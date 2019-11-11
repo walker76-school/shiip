@@ -13,13 +13,15 @@ import java.util.logging.Logger;
 public class ConnectionHandler implements CompletionHandler<AsynchronousSocketChannel, Void> {
 
     // Size of the Handshake buffer
-    private static final int BUFSIZE = 1;
+    private static final int BUFSIZE = 24;
 
     private AsynchronousServerSocketChannel listenChannel;
+    private final String documentRoot;
     private Logger logger;
 
-    public ConnectionHandler(AsynchronousServerSocketChannel listenChannel, Logger logger) {
+    public ConnectionHandler(AsynchronousServerSocketChannel listenChannel, String documentRoot, Logger logger) {
         this.listenChannel = listenChannel;
+        this.documentRoot = documentRoot;
         this.logger = logger;
     }
 
@@ -40,11 +42,11 @@ public class ConnectionHandler implements CompletionHandler<AsynchronousSocketCh
      * @param clntChan channel of new client
      */
     public void handleAccept(final AsynchronousSocketChannel clntChan) {
-        ByteBuffer buf = ByteBuffer.allocateDirect(BUFSIZE);
 
         // Create Connection Context
-        ClientConnectionContext connectionContext = new ClientConnectionContext(clntChan);
+        ClientConnectionContext connectionContext = new ClientConnectionContext(documentRoot, clntChan);
 
+        ByteBuffer buf = ByteBuffer.allocate(BUFSIZE);
         clntChan.read(buf, buf, new HandshakeHandler(connectionContext, logger));
     }
 }

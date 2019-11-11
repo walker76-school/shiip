@@ -5,6 +5,8 @@ import com.twitter.hpack.Encoder;
 import shiip.serialization.Framer;
 import shiip.serialization.NIODeframer;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.Selector;
 import java.util.ArrayList;
@@ -15,6 +17,7 @@ public class ClientConnectionContext {
     // Table size for Encoder and Decoder
     private static final int MAX_TABLE_SIZE = 4096;
 
+    private final String documentRoot;
     private final NIODeframer deframer;
     private final Framer framer;
     private final Decoder decoder;
@@ -22,13 +25,18 @@ public class ClientConnectionContext {
     private final AsynchronousSocketChannel clntSock;
     private final List<Integer> streamIDs;
 
-    public ClientConnectionContext(AsynchronousSocketChannel clntSock){
+    public ClientConnectionContext(String documentRoot, AsynchronousSocketChannel clntSock) {
+        this.documentRoot = documentRoot;
         deframer = new NIODeframer();
-        framer = new Framer(null);
+        framer = null;
         decoder = new Decoder(MAX_TABLE_SIZE, MAX_TABLE_SIZE);
         encoder = new Encoder(MAX_TABLE_SIZE);
         this.clntSock = clntSock;
         streamIDs =  new ArrayList<>();
+    }
+
+    public String getDocumentRoot() {
+        return documentRoot;
     }
 
     public NIODeframer getDeframer() {

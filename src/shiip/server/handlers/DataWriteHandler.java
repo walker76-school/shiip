@@ -1,8 +1,7 @@
 package shiip.server.handlers;
 
-import shiip.serialization.Message;
-import shiip.server.ServerAIO;
 import shiip.server.models.ClientConnectionContext;
+import shiip.server.models.WriteState;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -10,13 +9,15 @@ import java.nio.channels.CompletionHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class WriteMessageHandler implements CompletionHandler<Integer, ByteBuffer> {
+public class DataWriteHandler implements CompletionHandler<Integer, ByteBuffer> {
 
     private ClientConnectionContext context;
+    private WriteState state;
     private Logger logger;
 
-    public WriteMessageHandler(ClientConnectionContext context, Message toSend, CompletionHandler nextHandler, Logger logger) {
+    public DataWriteHandler(ClientConnectionContext context, WriteState state, Logger logger) {
         this.context = context;
+        this.state = state;
         this.logger = logger;
     }
 
@@ -43,7 +44,9 @@ public class WriteMessageHandler implements CompletionHandler<Integer, ByteBuffe
             context.getClntSock().write(buf, buf, this);
         } else { // Back to reading
             buf.clear();
-            context.getClntSock().read(buf, buf, new ServerAIO.ReadHandler(clntChan, logger));
+            if(this.state.equals(WriteState.SETUP)) {
+                context.getClntSock().read(buf, buf, new ReadHandler(context, logger));
+            }
         }
     }
 }

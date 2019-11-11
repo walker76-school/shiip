@@ -1,8 +1,10 @@
 package shiip.server.handlers;
 
+import shiip.serialization.BadAttributeException;
 import shiip.serialization.Settings;
 import shiip.serialization.Window_Update;
 import shiip.server.models.ClientConnectionContext;
+import shiip.server.models.WriteState;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -17,6 +19,12 @@ public class HandshakeHandler implements CompletionHandler<Integer, ByteBuffer> 
     // Initial HTTP handshake message
     private static final String HANDSHAKE_MESSAGE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
 
+    // StreamID for the connection
+    private static final int CONNECTION_STREAMID = 0;
+
+    // Maximum sized payload for a frame
+    private static final int MAX_INCREMENT = 16384;
+
     // Encoding for handshake message
     private static final Charset ENC = StandardCharsets.US_ASCII;
 
@@ -27,14 +35,14 @@ public class HandshakeHandler implements CompletionHandler<Integer, ByteBuffer> 
     public HandshakeHandler(ClientConnectionContext connectionContext, Logger logger) {
         this.context = connectionContext;
         this.logger = logger;
-        this.buffer = ByteBuffer.allocateDirect(HANDSHAKE_MESSAGE.getBytes(ENC).length);
+        this.buffer = ByteBuffer.allocate(HANDSHAKE_MESSAGE.getBytes(ENC).length);
     }
 
     @Override
     public void completed(Integer bytesRead, ByteBuffer buf) {
         try {
             handleRead(buf, bytesRead);
-        } catch (IOException e) {
+        } catch (BadAttributeException e) {
             logger.log(Level.WARNING, "Handle Read Failed", e);
         }
     }
@@ -48,11 +56,10 @@ public class HandshakeHandler implements CompletionHandler<Integer, ByteBuffer> 
         }
     }
 
-    private void handleRead(ByteBuffer buf, int bytesRead) throws IOException {
+    private void handleRead(ByteBuffer buf, int bytesRead) throws BadAttributeException {
         buffer.put(buf.array());
-        if(buffer.array().length == HANDSHAKE_MESSAGE.getBytes(ENC).length){
+        if(buffer.position() == HANDSHAKE_MESSAGE.getBytes(ENC).length){
             // Read the handshake message
-            int handshakeLength = HANDSHAKE_MESSAGE.getBytes(ENC).length;
             byte[] handshake = buffer.array();
 
             // Check the handshake message
@@ -63,13 +70,19 @@ public class HandshakeHandler implements CompletionHandler<Integer, ByteBuffer> 
             }
 
             // Send required data
-
             Settings settings = new Settings();
-            framer.putFrame(settings.encode(null));
-
             Window_Update wu = new Window_Update(CONNECTION_STREAMID, MAX_INCREMENT);
-            framer.putFrame(wu.encode(null));
+            byte[] settingsEncoded = settings.encode(null);
+            byte[] wuEncoded = wu.encode(null);
+
+            ByteBuffer buffer = ByteBuffer.allocateDirect(settingsEncoded.length + wuEncoded.length);
+            buffer.put(settingsEncoded);
+            buffer.put(wuEncoded);
+
+            context.getClntSock().write(buffer, buffer, new WriteHandler(context, WriteState.SETUP, logger));
+
         } else {
+            buf.clear();
             context.getClntSock().read(buf, buf, this);
         }
     }
