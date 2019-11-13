@@ -3,6 +3,7 @@ package shiip.server.handlers;
 import shiip.server.ServerAIO;
 import shiip.server.models.ClientConnectionContext;
 import shiip.server.models.FileContext;
+import shiip.server.models.FileReadState;
 import shiip.server.models.WriteState;
 
 import java.io.IOException;
@@ -31,11 +32,7 @@ public class WriteHandler implements CompletionHandler<Integer, ByteBuffer> {
 
     @Override
     public void completed(Integer bytesWritten, ByteBuffer buf) {
-        try {
-            handleWrite(context, buf);
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Error writing file " + e.getMessage());
-        }
+        handleWrite(context, buf);
     }
 
     @Override
@@ -47,7 +44,7 @@ public class WriteHandler implements CompletionHandler<Integer, ByteBuffer> {
         }
     }
 
-    private void handleWrite(final ClientConnectionContext context, ByteBuffer buf) throws IOException {
+    private void handleWrite(final ClientConnectionContext context, ByteBuffer buf) {
         if (buf.hasRemaining()) { // More to write
             context.getClntSock().write(buf, buf, this);
         } else { // Back to reading
@@ -55,11 +52,15 @@ public class WriteHandler implements CompletionHandler<Integer, ByteBuffer> {
             switch (this.state){
                 case SETUP:
                     ByteBuffer buffer = ByteBuffer.allocate(MAXIMUM_LENGTH);
-                    context.getClntSock().read(buffer, buffer, new ReadHandler(context, logger));
+                    context.getClntSock().read(buffer, buffer, new MessageReadHandler(context, logger));
                     break;
                 case HEADERS:
+                case DATA:
                     ByteBuffer fileBuffer = ByteBuffer.allocate(ServerAIO.MAXDATASIZE);
-                    fileContext.getChannel().read(fileBuffer, 0, fileBuffer, new FileReadHandler(context, fileContext, logger));
+                    if(!fileContext.getState().equals(FileReadState.DONE)) {
+                        fileContext.getChannel().read(fileBuffer, fileContext.getPosition(), fileBuffer, new FileReadHandler(context, fileContext, logger));
+                    }
+                    break;
             }
         }
     }
