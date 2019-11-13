@@ -4,7 +4,6 @@ import shiip.serialization.BadAttributeException;
 import shiip.serialization.Settings;
 import shiip.serialization.Window_Update;
 import shiip.server.models.ClientConnectionContext;
-import shiip.server.models.WriteState;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -82,7 +81,7 @@ public class HandshakeHandler implements CompletionHandler<Integer, ByteBuffer> 
             newBuffer.put(settingsEncoded);
             newBuffer.put(wuEncoded);
 
-            context.getClntSock().write(newBuffer, newBuffer, new WriteHandler(context, WriteState.SETUP, null, logger));
+            context.getClntSock().write(newBuffer, newBuffer, new SetupWriteHandler(context, logger));
 
         } else {
             buffer.clear();

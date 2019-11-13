@@ -43,7 +43,7 @@ public class ServerAIO {
         // Establish Logger
         Logger logger = Logger.getLogger("ServerAIO");
         try {
-            //logger.setUseParentHandlers(false);
+            logger.setUseParentHandlers(false);
             FileHandler handler = new FileHandler(LOG_FILE);
             handler.setFormatter(new SimpleFormatter());
             logger.addHandler(handler);

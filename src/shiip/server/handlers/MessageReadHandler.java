@@ -7,7 +7,6 @@ import shiip.serialization.Headers;
 import shiip.serialization.Message;
 import shiip.server.models.ClientConnectionContext;
 import shiip.server.models.FileContext;
-import shiip.server.models.WriteState;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -30,7 +29,7 @@ public class MessageReadHandler extends ReadHandler {
 
     public MessageReadHandler(ClientConnectionContext connectionContext, Logger logger) {
         super(connectionContext, logger);
-        logger.log(Level.INFO, "new ReadHandler");
+        logger.log(Level.INFO, "new MessageReadHandler");
     }
 
     protected void handleRead(ByteBuffer buf, int bytesRead) throws BadAttributeException {
@@ -172,7 +171,7 @@ public class MessageReadHandler extends ReadHandler {
         // Send good headers
         Headers headers = new Headers(streamID, false);
         headers.addValue(STATUS_KEY, "200 OK");
-        sendHeaders(headers, fileContext, WriteState.HEADERS);
+        sendHeaders(headers, fileContext);
     }
 
     private FileContext buildFileContext(int streamID, String filePath) {
@@ -214,11 +213,13 @@ public class MessageReadHandler extends ReadHandler {
     }
 
     private void sendBadHeaders(Headers headers){
-        sendHeaders(headers, null, WriteState.BAD_HEADERS);
+        ByteBuffer buffer = ByteBuffer.wrap(connectionContext.getFramer().putFrame(headers.encode(connectionContext.getEncoder())));
+        connectionContext.getClntSock().write(buffer, buffer, new BadHeadersWriteHandler(connectionContext, logger));
+
     }
 
-    private void sendHeaders(Headers headers, FileContext fileContext, WriteState state){
+    private void sendHeaders(Headers headers, FileContext fileContext){
         ByteBuffer buffer = ByteBuffer.wrap(connectionContext.getFramer().putFrame(headers.encode(connectionContext.getEncoder())));
-        connectionContext.getClntSock().write(buffer, buffer, new WriteHandler(connectionContext, state, fileContext, logger));
+        connectionContext.getClntSock().write(buffer, buffer, new HeadersWriteHandler(connectionContext, fileContext, logger));
     }
 }

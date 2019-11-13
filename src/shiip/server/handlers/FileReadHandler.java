@@ -4,9 +4,9 @@ import shiip.serialization.*;
 import shiip.server.models.ClientConnectionContext;
 import shiip.server.models.FileContext;
 import shiip.server.models.FileReadState;
-import shiip.server.models.WriteState;
 
 import java.nio.ByteBuffer;
+import java.nio.channels.WritePendingException;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -17,7 +17,7 @@ public class FileReadHandler extends ReadHandler {
 
     public FileReadHandler(ClientConnectionContext connectionContext, FileContext fileContext, Logger logger) {
         super(connectionContext, logger);
-        logger.log(Level.INFO, "new ReadHandler");
+        logger.log(Level.INFO, "new FileReadHandler");
         this.fileContext = fileContext;
     }
 
@@ -37,6 +37,10 @@ public class FileReadHandler extends ReadHandler {
     private void sendData(Data data){
         byte[] encoded = connectionContext.getFramer().putFrame(data.encode(null));
         ByteBuffer dataBuffer = ByteBuffer.wrap(encoded);
-        connectionContext.getClntSock().write(dataBuffer, dataBuffer, new WriteHandler(connectionContext, WriteState.DATA, fileContext, logger));
+        try {
+            connectionContext.getClntSock().write(dataBuffer, dataBuffer, new FileWriteHandler(connectionContext, fileContext, logger));
+        } catch (WritePendingException e){
+            connectionContext.getBufferedMessages().add(dataBuffer);
+        }
     }
 }

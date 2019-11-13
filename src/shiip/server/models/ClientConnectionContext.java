@@ -5,9 +5,13 @@ import com.twitter.hpack.Encoder;
 import shiip.serialization.NIODeframer;
 import shiip.serialization.NIOFramer;
 
+import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.SynchronousQueue;
 
 public class ClientConnectionContext {
 
@@ -21,6 +25,7 @@ public class ClientConnectionContext {
     private final Encoder encoder;
     private final AsynchronousSocketChannel clntSock;
     private final List<Integer> streamIDs;
+    private final List<ByteBuffer> bufferedMessages;
 
     public ClientConnectionContext(String documentRoot, AsynchronousSocketChannel clntSock) {
         this.documentRoot = documentRoot;
@@ -30,6 +35,7 @@ public class ClientConnectionContext {
         encoder = new Encoder(MAX_TABLE_SIZE);
         this.clntSock = clntSock;
         streamIDs =  new ArrayList<>();
+        bufferedMessages = new ArrayList<>();
     }
 
     public String getDocumentRoot() {
@@ -66,5 +72,9 @@ public class ClientConnectionContext {
 
     public void addStream(Integer streamID){
         this.streamIDs.add(streamID);
+    }
+
+    public synchronized List<ByteBuffer> getBufferedMessages() {
+        return Collections.synchronizedList(bufferedMessages);
     }
 }

@@ -21,7 +21,6 @@ public abstract class ReadHandler implements CompletionHandler<Integer, ByteBuff
     protected final Logger logger;
 
     public ReadHandler(ClientConnectionContext connectionContext, Logger logger) {
-        logger.log(Level.INFO, "new ReadHandler");
         this.connectionContext = connectionContext;
         this.logger = logger;
     }
