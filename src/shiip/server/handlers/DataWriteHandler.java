@@ -1,6 +1,9 @@
 package shiip.server.handlers;
 
+import shiip.server.ServerAIO;
 import shiip.server.models.ClientConnectionContext;
+import shiip.server.models.FileContext;
+import shiip.server.models.FileReadState;
 import shiip.server.models.WriteState;
 
 import java.io.IOException;
@@ -12,22 +15,18 @@ import java.util.logging.Logger;
 public class DataWriteHandler implements CompletionHandler<Integer, ByteBuffer> {
 
     private ClientConnectionContext context;
-    private WriteState state;
+    private FileContext fileContext;
     private Logger logger;
 
-    public DataWriteHandler(ClientConnectionContext context, WriteState state, Logger logger) {
+    public DataWriteHandler(ClientConnectionContext context, FileContext fileContext, Logger logger) {
         this.context = context;
-        this.state = state;
+        this.fileContext = fileContext;
         this.logger = logger;
     }
 
     @Override
     public void completed(Integer bytesWritten, ByteBuffer buf) {
-        try {
-            handleWrite(context, buf);
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Handle Write Failed", e);
-        }
+        handleWrite(context, buf);
     }
 
     @Override
@@ -39,13 +38,13 @@ public class DataWriteHandler implements CompletionHandler<Integer, ByteBuffer> 
         }
     }
 
-    private void handleWrite(final ClientConnectionContext context, ByteBuffer buf) throws IOException {
+    private void handleWrite(final ClientConnectionContext context, ByteBuffer buf) {
         if (buf.hasRemaining()) { // More to write
             context.getClntSock().write(buf, buf, this);
-        } else { // Back to reading
-            buf.clear();
-            if(this.state.equals(WriteState.SETUP)) {
-                context.getClntSock().read(buf, buf, new ReadHandler(context, logger));
+        } else {
+            ByteBuffer fileBuffer = ByteBuffer.allocate(ServerAIO.MAXDATASIZE);
+            if(!fileContext.getState().equals(FileReadState.DONE)) {
+                fileContext.getChannel().read(fileBuffer, fileContext.getPosition(), fileBuffer, new FileReadHandler(context, fileContext, logger));
             }
         }
     }

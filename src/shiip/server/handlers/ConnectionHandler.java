@@ -20,6 +20,7 @@ public class ConnectionHandler implements CompletionHandler<AsynchronousSocketCh
     private Logger logger;
 
     public ConnectionHandler(AsynchronousServerSocketChannel listenChannel, String documentRoot, Logger logger) {
+        logger.log(Level.INFO, "new ConnectionHandler");
         this.listenChannel = listenChannel;
         this.documentRoot = documentRoot;
         this.logger = logger;
@@ -42,11 +43,12 @@ public class ConnectionHandler implements CompletionHandler<AsynchronousSocketCh
      * @param clntChan channel of new client
      */
     public void handleAccept(final AsynchronousSocketChannel clntChan) {
+        logger.log(Level.INFO, "ConnectionHandler - handleAccept");
 
         // Create Connection Context
         ClientConnectionContext connectionContext = new ClientConnectionContext(documentRoot, clntChan);
 
-        ByteBuffer buf = ByteBuffer.allocate(BUFSIZE);
-        clntChan.read(buf, buf, new HandshakeHandler(connectionContext, logger));
+        ByteBuffer newBuffer = ByteBuffer.allocate(BUFSIZE);
+        clntChan.read(newBuffer, newBuffer, new HandshakeHandler(connectionContext, logger));
     }
 }

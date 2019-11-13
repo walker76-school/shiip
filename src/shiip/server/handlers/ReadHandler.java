@@ -6,15 +6,20 @@ import shiip.serialization.Constants;
 import shiip.serialization.Headers;
 import shiip.serialization.Message;
 import shiip.server.models.ClientConnectionContext;
+import shiip.server.models.FileContext;
 import shiip.server.models.WriteState;
 import shiip.server.protocols.ShiipDataProtocol;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousFileChannel;
 import java.nio.channels.CompletionHandler;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,6 +35,7 @@ public class ReadHandler implements CompletionHandler<Integer, ByteBuffer> {
     private final Logger logger;
 
     public ReadHandler(ClientConnectionContext connectionContext, Logger logger) {
+        logger.log(Level.INFO, "new ReadHandler");
         this.context = connectionContext;
         this.logger = logger;
     }
@@ -45,6 +51,7 @@ public class ReadHandler implements CompletionHandler<Integer, ByteBuffer> {
 
     @Override
     public void failed(Throwable ex, ByteBuffer v) {
+        logger.log(Level.INFO, "Client closed connection");
         try {
             context.getClntSock().close();
         } catch (IOException e) {
@@ -57,33 +64,43 @@ public class ReadHandler implements CompletionHandler<Integer, ByteBuffer> {
             failed(null, buf);
         } else if (bytesRead > 0) {
 
-            // Try to get a frame
-            byte[] encodedMessage = context.getDeframer().getFrame(buf.array());
+            boolean moreFrames = true;
 
-            if(encodedMessage != null){
-                Message message = getMessage(encodedMessage, context.getDecoder());
-                // If m is not null then we read a valid frame
-                if (message != null) {
+            // Load the bytes we did read
+            byte[] msgBytes = Arrays.copyOfRange(buf.array(), 0, bytesRead);
+            context.getDeframer().feed(msgBytes);
 
-                    switch (message.getCode()) {
-                        case Constants.DATA_TYPE:
-                            handleData(message);
-                            break;
-                        case Constants.HEADERS_TYPE:
-                            handleHeaders(message, context);
-                            break;
-                        case Constants.SETTINGS_TYPE:
-                            handleSettings(message);
-                            break;
-                        case Constants.WINDOW_UPDATE_TYPE:
-                            handleWindowUpdate(message);
-                            break;
+            while(moreFrames) {
+                byte[] encodedMessage = context.getDeframer().getFrame();
+
+                if (encodedMessage != null) {
+                    Message message = getMessage(encodedMessage, context.getDecoder());
+                    // If m is not null then we read a valid frame
+                    if (message != null) {
+
+                        switch (message.getCode()) {
+                            case Constants.DATA_TYPE:
+                                handleData(message);
+                                break;
+                            case Constants.HEADERS_TYPE:
+                                handleHeaders(message, context);
+                                break;
+                            case Constants.SETTINGS_TYPE:
+                                handleSettings(message);
+                                break;
+                            case Constants.WINDOW_UPDATE_TYPE:
+                                handleWindowUpdate(message);
+                                break;
+                        }
                     }
-                }
 
+                } else {
+                    moreFrames = false;
+                }
             }
 
-            context.getClntSock().read(buf, buf, this);
+            buf.clear();
+            context.getClntSock().read(buf, buf, new ReadHandler(context, logger));
 
         }
     }
@@ -111,6 +128,8 @@ public class ReadHandler implements CompletionHandler<Integer, ByteBuffer> {
      * @param connectionContext the connection context
      */
     private void handleHeaders(Message m, ClientConnectionContext connectionContext) throws BadAttributeException {
+        logger.log(Level.INFO, "Received message: " + m);
+
         Headers h = (Headers) m;
 
         int streamID = h.getStreamID();
@@ -142,9 +161,7 @@ public class ReadHandler implements CompletionHandler<Integer, ByteBuffer> {
             // Send headers
             Headers headers = new Headers(streamID, false);
             headers.addValue(STATUS_KEY, "404 No or bad path");
-            ByteBuffer buffer = ByteBuffer.wrap(headers.encode(connectionContext.getEncoder()));
-            connectionContext.getClntSock().write(buffer, buffer, new WriteHandler(connectionContext, WriteState.BAD_HEADERS, logger));
-
+            sendHeaders(headers, WriteState.BAD_HEADERS);
             return; // Terminate stream
         }
 
@@ -158,9 +175,7 @@ public class ReadHandler implements CompletionHandler<Integer, ByteBuffer> {
             // Send headers
             Headers headers = new Headers(streamID, false);
             headers.addValue(STATUS_KEY, "404 Cannot request directory");
-            ByteBuffer buffer = ByteBuffer.wrap(headers.encode(connectionContext.getEncoder()));
-            connectionContext.getClntSock().write(buffer, buffer, new WriteHandler(connectionContext, WriteState.BAD_HEADERS, logger));
-
+            sendHeaders(headers, WriteState.BAD_HEADERS);
             return; // Terminate stream
         }
 
@@ -171,24 +186,30 @@ public class ReadHandler implements CompletionHandler<Integer, ByteBuffer> {
             // Send headers
             Headers headers = new Headers(streamID, false);
             headers.addValue(STATUS_KEY, "404 File not found");
-            ByteBuffer buffer = ByteBuffer.wrap(headers.encode(connectionContext.getEncoder()));
-            connectionContext.getClntSock().write(buffer, buffer, new WriteHandler(connectionContext, WriteState.BAD_HEADERS, logger));
-
+            sendHeaders(headers, WriteState.BAD_HEADERS);
             return; // Terminate stream
-
         }
 
         // Record the streamID
         connectionContext.addStream(streamID);
 
+        FileContext fileContext = buildFileContext(streamID, filePath);
+
         // Send good headers
         Headers headers = new Headers(streamID, false);
         headers.addValue(STATUS_KEY, "200 OK");
-        ByteBuffer buffer = ByteBuffer.wrap(headers.encode(connectionContext.getEncoder()));
-        connectionContext.getClntSock().write(buffer, buffer, new WriteHandler(connectionContext, WriteState.HEADERS, logger));
+        sendHeaders(headers, fileContext, WriteState.HEADERS);
+    }
 
-        // WRITE HANDLER USING filePath
-        // pool.execute(new ShiipDataProtocol(framer, streamID, filePath, logger));
+    private FileContext buildFileContext(int streamID, String filePath) {
+        try{
+            Path path = Paths.get(filePath);
+            AsynchronousFileChannel channel = AsynchronousFileChannel.open(path, StandardOpenOption.READ);
+            return new FileContext(streamID, channel, path);
+        } catch (Exception e){
+            // Do nothing
+        }
+        return null;
     }
 
     /**
@@ -216,5 +237,14 @@ public class ReadHandler implements CompletionHandler<Integer, ByteBuffer> {
      */
     private void handleWindowUpdate(Message m) {
         logger.log(Level.INFO, "Received message: " + m);
+    }
+
+    private void sendHeaders(Headers headers, WriteState state){
+        sendHeaders(headers, null, state);
+    }
+
+    private void sendHeaders(Headers headers, FileContext fileContext, WriteState state){
+        ByteBuffer buffer = ByteBuffer.wrap(context.getFramer().putFrame(headers.encode(context.getEncoder())));
+        context.getClntSock().write(buffer, buffer, new WriteHandler(context, state, fileContext, logger));
     }
 }

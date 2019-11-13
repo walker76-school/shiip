@@ -2,13 +2,10 @@ package shiip.server.models;
 
 import com.twitter.hpack.Decoder;
 import com.twitter.hpack.Encoder;
-import shiip.serialization.Framer;
 import shiip.serialization.NIODeframer;
+import shiip.serialization.NIOFramer;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.nio.channels.AsynchronousSocketChannel;
-import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,7 +16,7 @@ public class ClientConnectionContext {
 
     private final String documentRoot;
     private final NIODeframer deframer;
-    private final Framer framer;
+    private final NIOFramer framer;
     private final Decoder decoder;
     private final Encoder encoder;
     private final AsynchronousSocketChannel clntSock;
@@ -28,7 +25,7 @@ public class ClientConnectionContext {
     public ClientConnectionContext(String documentRoot, AsynchronousSocketChannel clntSock) {
         this.documentRoot = documentRoot;
         deframer = new NIODeframer();
-        framer = null;
+        framer = new NIOFramer();
         decoder = new Decoder(MAX_TABLE_SIZE, MAX_TABLE_SIZE);
         encoder = new Encoder(MAX_TABLE_SIZE);
         this.clntSock = clntSock;
@@ -43,7 +40,7 @@ public class ClientConnectionContext {
         return deframer;
     }
 
-    public Framer getFramer() {
+    public NIOFramer getFramer() {
         return framer;
     }
 

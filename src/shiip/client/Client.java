@@ -73,7 +73,8 @@ public class Client {
         Decoder decoder = new Decoder(MAX_TABLE_SIZE, MAX_TABLE_SIZE);
 
         String host = args[HOST_NDX];
-        try (Socket socket = TLSFactory.getClientSocket(host, Integer.parseInt(args[PORT_NDX]))) {
+        //try (Socket socket = TLSFactory.getClientSocket(host, Integer.parseInt(args[PORT_NDX]))) {
+        try (Socket socket = new Socket(host, Integer.parseInt(args[PORT_NDX]))) {
 
             Deframer deframer = openConnection(socket);
             Map<Integer, FileOutputStream> ongoingDownloads = new TreeMap<>();

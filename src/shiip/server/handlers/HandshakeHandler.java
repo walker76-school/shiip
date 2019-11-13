@@ -30,12 +30,13 @@ public class HandshakeHandler implements CompletionHandler<Integer, ByteBuffer> 
 
     private final ClientConnectionContext context;
     private final Logger logger;
-    private final ByteBuffer buffer;
+    private final ByteBuffer localBuffer;
 
     public HandshakeHandler(ClientConnectionContext connectionContext, Logger logger) {
+        logger.log(Level.INFO, "new HandshakeHandler");
         this.context = connectionContext;
         this.logger = logger;
-        this.buffer = ByteBuffer.allocate(HANDSHAKE_MESSAGE.getBytes(ENC).length);
+        this.localBuffer = ByteBuffer.allocate(HANDSHAKE_MESSAGE.getBytes(ENC).length);
     }
 
     @Override
@@ -56,11 +57,13 @@ public class HandshakeHandler implements CompletionHandler<Integer, ByteBuffer> 
         }
     }
 
-    private void handleRead(ByteBuffer buf, int bytesRead) throws BadAttributeException {
-        buffer.put(buf.array());
-        if(buffer.position() == HANDSHAKE_MESSAGE.getBytes(ENC).length){
+    private void handleRead(ByteBuffer buffer, int bytesRead) throws BadAttributeException {
+        logger.log(Level.INFO, "HandshakeHandler - handleRead");
+        localBuffer.put(buffer.array());
+
+        if(localBuffer.position() == HANDSHAKE_MESSAGE.getBytes(ENC).length){
             // Read the handshake message
-            byte[] handshake = buffer.array();
+            byte[] handshake = localBuffer.array();
 
             // Check the handshake message
             String handshakeMessage = b2s(handshake);
@@ -75,15 +78,15 @@ public class HandshakeHandler implements CompletionHandler<Integer, ByteBuffer> 
             byte[] settingsEncoded = settings.encode(null);
             byte[] wuEncoded = wu.encode(null);
 
-            ByteBuffer buffer = ByteBuffer.allocateDirect(settingsEncoded.length + wuEncoded.length);
-            buffer.put(settingsEncoded);
-            buffer.put(wuEncoded);
+            ByteBuffer newBuffer = ByteBuffer.allocate(settingsEncoded.length + wuEncoded.length);
+            newBuffer.put(settingsEncoded);
+            newBuffer.put(wuEncoded);
 
-            context.getClntSock().write(buffer, buffer, new WriteHandler(context, WriteState.SETUP, logger));
+            context.getClntSock().write(newBuffer, newBuffer, new WriteHandler(context, WriteState.SETUP, null, logger));
 
         } else {
-            buf.clear();
-            context.getClntSock().read(buf, buf, this);
+            buffer.clear();
+            context.getClntSock().read(buffer, buffer, this);
         }
     }
 
