@@ -10,6 +10,7 @@ import shiip.serialization.Framer;
 import shiip.serialization.Data;
 
 import java.io.FileInputStream;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -57,7 +58,8 @@ public class ShiipDataProtocol implements Runnable {
             FileInputStream in = new FileInputStream(filePath);
 
             // Continue to read the data
-            while(in.read(buffer, 0, MAXDATASIZE) != -1){
+            int numRead;
+            while((numRead = in.read(buffer, 0, MAXDATASIZE)) != -1){
 
                 // Send the Data frame
                 Data data = new Data(streamID, false, buffer);
