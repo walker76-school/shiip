@@ -17,7 +17,7 @@ public class SetupWriteHandler extends WriteHandler {
 
     @Override
     protected void handleWriteCompleted() {
-        System.out.println( "SetupWriteHandler completed - " + context.getBufferedMessages().size() + " remaining buffered messages");
+        System.out.println( "SetupWriteHandler completed");
         ByteBuffer buffer = ByteBuffer.allocate(MAXIMUM_LENGTH);
         context.getClntSock().read(buffer, buffer, new MessageReadHandler(context, logger));
     }

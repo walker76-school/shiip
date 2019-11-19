@@ -5,13 +5,16 @@ import com.twitter.hpack.Encoder;
 import shiip.serialization.NIODeframer;
 import shiip.serialization.NIOFramer;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Queue;
+import java.nio.channels.Selector;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.SynchronousQueue;
+import java.util.stream.Collectors;
 
 public class ClientConnectionContext {
 
@@ -25,9 +28,10 @@ public class ClientConnectionContext {
     private final Encoder encoder;
     private final AsynchronousSocketChannel clntSock;
     private final List<Integer> streamIDs;
-    private final List<ByteBuffer> bufferedMessages;
+    private final Map<Integer, FileInputStream> selector;
+    private final Queue<ByteBuffer> queue;
 
-    public ClientConnectionContext(String documentRoot, AsynchronousSocketChannel clntSock) {
+    public ClientConnectionContext(String documentRoot, AsynchronousSocketChannel clntSock) throws IOException {
         this.documentRoot = documentRoot;
         deframer = new NIODeframer();
         framer = new NIOFramer();
@@ -35,7 +39,8 @@ public class ClientConnectionContext {
         encoder = new Encoder(MAX_TABLE_SIZE);
         this.clntSock = clntSock;
         streamIDs =  new ArrayList<>();
-        bufferedMessages = new ArrayList<>();
+        selector = new ConcurrentHashMap<>();
+        queue = new ConcurrentLinkedQueue<>();
     }
 
     public String getDocumentRoot() {
@@ -62,19 +67,23 @@ public class ClientConnectionContext {
         return clntSock;
     }
 
+    public Map<Integer, FileInputStream> getSelector() {
+        return selector;
+    }
+
     public List<Integer> getStreamIDs() {
-        return streamIDs;
+        return new ArrayList<>(selector.keySet());
     }
 
     public boolean containsStreamID(Integer streamID){
         return this.streamIDs.contains(streamID);
     }
 
-    public void addStream(Integer streamID){
-        this.streamIDs.add(streamID);
+    public void addStream(Integer streamID, FileInputStream stream){
+        this.selector.put(streamID, stream);
     }
 
-    public synchronized List<ByteBuffer> getBufferedMessages() {
-        return Collections.synchronizedList(bufferedMessages);
+    public Queue<ByteBuffer> getQueue() {
+        return queue;
     }
 }

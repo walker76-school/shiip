@@ -3,6 +3,7 @@ package shiip.server.handlers;
 
 import shiip.server.models.ClientConnectionContext;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
@@ -29,7 +30,11 @@ public class ConnectionHandler implements CompletionHandler<AsynchronousSocketCh
     @Override
     public void completed(AsynchronousSocketChannel clntChan, Void attachment) {
         listenChannel.accept(null, this);
-        handleAccept(clntChan);
+        try {
+            handleAccept(clntChan);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -42,7 +47,7 @@ public class ConnectionHandler implements CompletionHandler<AsynchronousSocketCh
      *
      * @param clntChan channel of new client
      */
-    public void handleAccept(final AsynchronousSocketChannel clntChan) {
+    public void handleAccept(final AsynchronousSocketChannel clntChan) throws IOException {
         logger.log(Level.INFO, "ConnectionHandler - handleAccept");
 
         // Create Connection Context

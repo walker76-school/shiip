@@ -7,10 +7,15 @@ import shiip.serialization.Headers;
 import shiip.serialization.Message;
 import shiip.server.models.ClientConnectionContext;
 import shiip.server.models.FileContext;
+import shiip.server.models.HeadersState;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.CompletionHandler;
+import java.nio.channels.WritePendingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -134,7 +139,7 @@ public class MessageReadHandler extends ReadHandler {
             // Send headers
             Headers headers = new Headers(streamID, false);
             headers.addValue(STATUS_KEY, "404 No or bad path");
-            sendBadHeaders(headers);
+            sendHeaders(headers);
             return; // Terminate stream
         }
 
@@ -148,7 +153,7 @@ public class MessageReadHandler extends ReadHandler {
             // Send headers
             Headers headers = new Headers(streamID, false);
             headers.addValue(STATUS_KEY, "404 Cannot request directory");
-            sendBadHeaders(headers);
+            sendHeaders(headers);
             return; // Terminate stream
         }
 
@@ -159,13 +164,11 @@ public class MessageReadHandler extends ReadHandler {
             // Send headers
             Headers headers = new Headers(streamID, false);
             headers.addValue(STATUS_KEY, "404 File not found");
-            sendBadHeaders(headers);
+            sendHeaders(headers);
             return; // Terminate stream
         }
 
-        // Record the streamID
-        connectionContext.addStream(streamID);
-
+        // Build file context
         FileContext fileContext = buildFileContext(streamID, filePath);
 
         // Send good headers
@@ -176,9 +179,8 @@ public class MessageReadHandler extends ReadHandler {
 
     private FileContext buildFileContext(int streamID, String filePath) {
         try{
-            Path path = Paths.get(filePath);
-            AsynchronousFileChannel channel = AsynchronousFileChannel.open(path, StandardOpenOption.READ);
-            return new FileContext(streamID, channel, path);
+            FileInputStream stream = new FileInputStream(filePath);
+            return new FileContext(streamID, stream);
         } catch (Exception e){
             // Probably do something here
         }
@@ -212,14 +214,22 @@ public class MessageReadHandler extends ReadHandler {
         logger.log(Level.INFO, "Received message: " + m);
     }
 
-    private void sendBadHeaders(Headers headers){
-        ByteBuffer buffer = ByteBuffer.wrap(connectionContext.getFramer().putFrame(headers.encode(connectionContext.getEncoder())));
-        connectionContext.getClntSock().write(buffer, buffer, new BadHeadersWriteHandler(connectionContext, logger));
-
+    private void sendHeaders(Headers headers){
+        sendHeaders(headers, HeadersState.BAD, null);
     }
 
     private void sendHeaders(Headers headers, FileContext fileContext){
+        sendHeaders(headers, HeadersState.GOOD, fileContext);
+
+    }
+
+    private void sendHeaders(Headers headers, HeadersState state, FileContext fileContext){
         ByteBuffer buffer = ByteBuffer.wrap(connectionContext.getFramer().putFrame(headers.encode(connectionContext.getEncoder())));
-        connectionContext.getClntSock().write(buffer, buffer, new HeadersWriteHandler(connectionContext, fileContext, logger));
+        if(connectionContext.getStreamIDs().size() > 0){
+            connectionContext.getQueue().add(buffer);
+            connectionContext.addStream(fileContext.getStreamID(), fileContext.getStream());
+        } else {
+            connectionContext.getClntSock().write(buffer, buffer, new HeadersWriteHandler(connectionContext, state, fileContext, logger));
+        }
     }
 }

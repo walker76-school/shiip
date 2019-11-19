@@ -1,5 +1,6 @@
 package shiip.server.handlers;
 
+import shiip.serialization.BadAttributeException;
 import shiip.server.models.ClientConnectionContext;
 
 import java.io.IOException;
@@ -27,7 +28,13 @@ public abstract class WriteHandler implements CompletionHandler<Integer, ByteBuf
             context.getClntSock().write(buf, buf, this);
         } else { // Back to reading
             buf.clear();
-            handleWriteCompleted();
+            try {
+                handleWriteCompleted();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (BadAttributeException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -40,5 +47,5 @@ public abstract class WriteHandler implements CompletionHandler<Integer, ByteBuf
         }
     }
 
-    protected abstract void handleWriteCompleted();
+    protected abstract void handleWriteCompleted() throws IOException, BadAttributeException;
 }
