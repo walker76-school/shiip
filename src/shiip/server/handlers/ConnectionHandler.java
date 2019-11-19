@@ -1,6 +1,5 @@
 package shiip.server.handlers;
 
-
 import shiip.server.models.ClientConnectionContext;
 
 import java.io.IOException;

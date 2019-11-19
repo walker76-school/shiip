@@ -30,9 +30,7 @@ public abstract class WriteHandler implements CompletionHandler<Integer, ByteBuf
             buf.clear();
             try {
                 handleWriteCompleted();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (BadAttributeException e) {
+            } catch (IOException | BadAttributeException e) {
                 e.printStackTrace();
             }
         }
