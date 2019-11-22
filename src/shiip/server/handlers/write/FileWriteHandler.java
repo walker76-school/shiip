@@ -8,7 +8,9 @@ import shiip.server.models.ClientConnectionContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.channels.WritePendingException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
 
@@ -16,32 +18,53 @@ public class FileWriteHandler extends WriteHandler {
 
     private static Random rand = new Random();
 
+    private int toRemove;
+
     public FileWriteHandler(ClientConnectionContext context, Logger logger) {
         super(context, logger);
+        toRemove = -1;
     }
 
     @Override
     protected void handleWriteCompleted() throws IOException, BadAttributeException {
+
+        if(toRemove != -1){
+            context.getSelector().remove(toRemove);
+            toRemove = -1;
+        }
+
         if(!context.getQueue().isEmpty()){
             ByteBuffer buffer = context.getQueue().remove();
             context.getClntSock().write(buffer, buffer, this);
         } else if (context.getStreamIDs().size() > 0) {
-            Integer streamID = context.getStreamIDs().get(rand.nextInt(context.getStreamIDs().size()));
-            InputStream fileInputStream = context.getSelector().get(streamID);
+            int streamID = -1;
+            while(streamID == -1){
+                try {
+                    List<Integer> streamIDs = context.getStreamIDs();
+                    streamID = streamIDs.get(rand.nextInt(streamIDs.size()));
+                } catch (IndexOutOfBoundsException e){
+                    streamID = -1;
+                }
+            }
 
+            InputStream fileInputStream = context.getSelector().get(streamID);
             byte[] fileBuffer = new byte[ServerAIO.MAXDATASIZE];
             int bytesRead = fileInputStream.read(fileBuffer);
             Data data;
             if (bytesRead == -1) {
                 data = new Data(streamID, true, new byte[]{});
-                context.getSelector().remove(streamID);
+                toRemove = streamID;
             } else {
                 data = new Data(streamID, false, Arrays.copyOfRange(fileBuffer, 0, bytesRead));
             }
 
             byte[] encodedMessage = context.getFramer().putFrame(data.encode(null));
             ByteBuffer buffer = ByteBuffer.wrap(encodedMessage);
-            context.getClntSock().write(buffer, buffer, this);
+            try {
+                context.getClntSock().write(buffer, buffer, this);
+            } catch (WritePendingException e){
+                context.getQueue().add(buffer);
+            }
         }
     }
 }

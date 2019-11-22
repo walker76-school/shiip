@@ -13,6 +13,7 @@ import shiip.server.models.HeadersState;
 import java.io.File;
 import java.io.FileInputStream;
 import java.nio.ByteBuffer;
+import java.nio.channels.WritePendingException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -219,11 +220,11 @@ public class MessageReadHandler extends ReadHandler {
 
     private void sendHeaders(Headers headers, HeadersState state, FileContext fileContext){
         ByteBuffer buffer = ByteBuffer.wrap(connectionContext.getFramer().putFrame(headers.encode(connectionContext.getEncoder())));
-        if(connectionContext.getStreamIDs().size() > 0){
+        try {
+            connectionContext.getClntSock().write(buffer, buffer, new HeadersWriteHandler(connectionContext, state, fileContext, logger));
+        } catch (WritePendingException e){
             connectionContext.getQueue().add(buffer);
             connectionContext.addStream(fileContext.getStreamID(), fileContext.getStream());
-        } else {
-            connectionContext.getClntSock().write(buffer, buffer, new HeadersWriteHandler(connectionContext, state, fileContext, logger));
         }
     }
 }
