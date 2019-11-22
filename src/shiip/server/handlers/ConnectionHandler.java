@@ -1,5 +1,6 @@
 package shiip.server.handlers;
 
+import shiip.server.handlers.read.HandshakeReadHandler;
 import shiip.server.models.ClientConnectionContext;
 
 import java.io.IOException;
@@ -20,7 +21,6 @@ public class ConnectionHandler implements CompletionHandler<AsynchronousSocketCh
     private Logger logger;
 
     public ConnectionHandler(AsynchronousServerSocketChannel listenChannel, String documentRoot, Logger logger) {
-        logger.log(Level.INFO, "new ConnectionHandler");
         this.listenChannel = listenChannel;
         this.documentRoot = documentRoot;
         this.logger = logger;
@@ -32,13 +32,18 @@ public class ConnectionHandler implements CompletionHandler<AsynchronousSocketCh
         try {
             handleAccept(clntChan);
         } catch (IOException e) {
-            e.printStackTrace();
+            try{
+                clntChan.close();
+            } catch (IOException ex){
+                failed(ex, null);
+            }
+            failed(e, null);
         }
     }
 
     @Override
     public void failed(Throwable e, Void attachment) {
-        logger.log(Level.WARNING, "Close Failed", e);
+        logger.log(Level.WARNING, e.getMessage());
     }
 
     /**
@@ -47,12 +52,11 @@ public class ConnectionHandler implements CompletionHandler<AsynchronousSocketCh
      * @param clntChan channel of new client
      */
     public void handleAccept(final AsynchronousSocketChannel clntChan) throws IOException {
-        logger.log(Level.INFO, "ConnectionHandler - handleAccept");
 
         // Create Connection Context
         ClientConnectionContext connectionContext = new ClientConnectionContext(documentRoot, clntChan);
 
         ByteBuffer newBuffer = ByteBuffer.allocate(BUFSIZE);
-        clntChan.read(newBuffer, newBuffer, new HandshakeHandler(connectionContext, logger));
+        clntChan.read(newBuffer, newBuffer, new HandshakeReadHandler(connectionContext, logger));
     }
 }

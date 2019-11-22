@@ -1,4 +1,4 @@
-package shiip.server.handlers;
+package shiip.server.handlers.write;
 
 import shiip.serialization.BadAttributeException;
 import shiip.serialization.Data;
@@ -10,7 +10,6 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Random;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class FileWriteHandler extends WriteHandler {
@@ -19,16 +18,6 @@ public class FileWriteHandler extends WriteHandler {
 
     public FileWriteHandler(ClientConnectionContext context, Logger logger) {
         super(context, logger);
-        System.out.println("FileWriteHandler created");
-    }
-
-    @Override
-    public void failed(Throwable ex, ByteBuffer buf) {
-        try {
-            context.getClntSock().close();
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Close Failed", e);
-        }
     }
 
     @Override
@@ -37,7 +26,6 @@ public class FileWriteHandler extends WriteHandler {
             ByteBuffer buffer = context.getQueue().remove();
             context.getClntSock().write(buffer, buffer, this);
         } else if (context.getStreamIDs().size() > 0) {
-            //System.out.println("FileWriteHandler - " + bound + " " + streamIDs);
             Integer streamID = context.getStreamIDs().get(rand.nextInt(context.getStreamIDs().size()));
             InputStream fileInputStream = context.getSelector().get(streamID);
 

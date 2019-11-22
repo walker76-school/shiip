@@ -1,25 +1,20 @@
-package shiip.server.handlers;
+package shiip.server.handlers.read;
 
 import com.twitter.hpack.Decoder;
 import shiip.serialization.BadAttributeException;
 import shiip.serialization.Constants;
 import shiip.serialization.Headers;
 import shiip.serialization.Message;
+import shiip.server.handlers.write.HeadersWriteHandler;
 import shiip.server.models.ClientConnectionContext;
 import shiip.server.models.FileContext;
 import shiip.server.models.HeadersState;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousFileChannel;
-import java.nio.channels.CompletionHandler;
-import java.nio.channels.WritePendingException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,12 +29,11 @@ public class MessageReadHandler extends ReadHandler {
 
     public MessageReadHandler(ClientConnectionContext connectionContext, Logger logger) {
         super(connectionContext, logger);
-        logger.log(Level.INFO, "new MessageReadHandler");
     }
 
     protected void handleRead(ByteBuffer buf, int bytesRead) throws BadAttributeException {
         if (bytesRead == -1) { // Did the other end close?
-            failed(null, buf);
+            fail();
         } else if (bytesRead > 0) {
 
             boolean moreFrames = true;

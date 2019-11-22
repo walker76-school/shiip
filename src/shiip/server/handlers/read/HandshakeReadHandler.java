@@ -1,19 +1,18 @@
-package shiip.server.handlers;
+package shiip.server.handlers.read;
 
 import shiip.serialization.BadAttributeException;
 import shiip.serialization.Settings;
 import shiip.serialization.Window_Update;
+import shiip.server.handlers.write.SetupWriteHandler;
 import shiip.server.models.ClientConnectionContext;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.CompletionHandler;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class HandshakeHandler implements CompletionHandler<Integer, ByteBuffer> {
+public class HandshakeReadHandler extends ReadHandler {
 
     // Initial HTTP handshake message
     private static final String HANDSHAKE_MESSAGE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
@@ -27,37 +26,15 @@ public class HandshakeHandler implements CompletionHandler<Integer, ByteBuffer> 
     // Encoding for handshake message
     private static final Charset ENC = StandardCharsets.US_ASCII;
 
-    private final ClientConnectionContext context;
-    private final Logger logger;
     private final ByteBuffer localBuffer;
 
-    public HandshakeHandler(ClientConnectionContext connectionContext, Logger logger) {
-        logger.log(Level.INFO, "new HandshakeHandler");
-        this.context = connectionContext;
-        this.logger = logger;
+    public HandshakeReadHandler(ClientConnectionContext connectionContext, Logger logger) {
+        super(connectionContext, logger);
         this.localBuffer = ByteBuffer.allocate(HANDSHAKE_MESSAGE.getBytes(ENC).length);
     }
 
     @Override
-    public void completed(Integer bytesRead, ByteBuffer buf) {
-        try {
-            handleRead(buf, bytesRead);
-        } catch (BadAttributeException e) {
-            logger.log(Level.WARNING, "Handle Read Failed", e);
-        }
-    }
-
-    @Override
-    public void failed(Throwable ex, ByteBuffer v) {
-        try {
-            context.getClntSock().close();
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Close Failed", e);
-        }
-    }
-
-    private void handleRead(ByteBuffer buffer, int bytesRead) throws BadAttributeException {
-        logger.log(Level.INFO, "HandshakeHandler - handleRead");
+    protected void handleRead(ByteBuffer buffer, int bytesRead) throws BadAttributeException {
         localBuffer.put(buffer.array());
 
         if(localBuffer.position() == HANDSHAKE_MESSAGE.getBytes(ENC).length){
@@ -81,11 +58,11 @@ public class HandshakeHandler implements CompletionHandler<Integer, ByteBuffer> 
             newBuffer.put(settingsEncoded);
             newBuffer.put(wuEncoded);
 
-            context.getClntSock().write(newBuffer, newBuffer, new SetupWriteHandler(context, logger));
+            connectionContext.getClntSock().write(newBuffer, newBuffer, new SetupWriteHandler(connectionContext, logger));
 
         } else {
             buffer.clear();
-            context.getClntSock().read(buffer, buffer, this);
+            connectionContext.getClntSock().read(buffer, buffer, this);
         }
     }
 

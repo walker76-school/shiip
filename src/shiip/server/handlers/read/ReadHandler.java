@@ -1,4 +1,4 @@
-package shiip.server.handlers;
+package shiip.server.handlers.read;
 
 import shiip.serialization.BadAttributeException;
 import shiip.server.models.ClientConnectionContext;
@@ -10,12 +10,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public abstract class ReadHandler implements CompletionHandler<Integer, ByteBuffer> {
-
-    // Key for finding the path
-    private static final String PATH_KEY = ":path";
-
-    // Key for finding the status
-    private static final String STATUS_KEY = ":status";
 
     protected final ClientConnectionContext connectionContext;
     protected final Logger logger;
@@ -30,17 +24,21 @@ public abstract class ReadHandler implements CompletionHandler<Integer, ByteBuff
         try {
             handleRead(buf, bytesRead);
         } catch (BadAttributeException e) {
-            logger.log(Level.WARNING, "Handle Read Failed", e);
+            failed(e, null);
         }
     }
 
     @Override
     public void failed(Throwable ex, ByteBuffer v) {
-        logger.log(Level.INFO, "Client closed connection");
+        logger.log(Level.INFO, ex.getMessage());
+        fail();
+    }
+
+    protected void fail(){
         try {
             connectionContext.getClntSock().close();
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Close Failed", e);
+            logger.log(Level.WARNING, e.getMessage());
         }
     }
 

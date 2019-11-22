@@ -1,4 +1,4 @@
-package shiip.server.handlers;
+package shiip.server.handlers.write;
 
 import shiip.serialization.BadAttributeException;
 import shiip.server.models.ClientConnectionContext;
@@ -11,8 +11,6 @@ import java.util.logging.Logger;
 
 
 public abstract class WriteHandler implements CompletionHandler<Integer, ByteBuffer> {
-
-    private static final int MAXIMUM_LENGTH = 16393;
 
     protected ClientConnectionContext context;
     protected Logger logger;
@@ -31,7 +29,7 @@ public abstract class WriteHandler implements CompletionHandler<Integer, ByteBuf
             try {
                 handleWriteCompleted();
             } catch (IOException | BadAttributeException e) {
-                e.printStackTrace();
+                failed(e, null);
             }
         }
     }
@@ -39,9 +37,10 @@ public abstract class WriteHandler implements CompletionHandler<Integer, ByteBuf
     @Override
     public void failed(Throwable ex, ByteBuffer buf) {
         try {
+            logger.log(Level.WARNING, ex.getMessage());
             context.getClntSock().close();
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Close Failed", e);
+            logger.log(Level.WARNING, e.getMessage());
         }
     }
 
