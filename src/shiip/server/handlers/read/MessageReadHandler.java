@@ -1,3 +1,9 @@
+/*******************************************************
+ * Author: Andrew Walker
+ * Assignment: Prog 6
+ * Class: Data Comm
+ *******************************************************/
+
 package shiip.server.handlers.read;
 
 import com.twitter.hpack.Decoder;
@@ -20,6 +26,9 @@ import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * ReadHandler for reading messages
+ */
 public class MessageReadHandler extends ReadHandler {
 
     // Key for finding the path
@@ -28,10 +37,16 @@ public class MessageReadHandler extends ReadHandler {
     // Key for finding the status
     private static final String STATUS_KEY = ":status";
 
+    /**
+     * Constructs a MessageReadHandler from a client context and logger
+     * @param connectionContext client context
+     * @param logger logger
+     */
     public MessageReadHandler(ClientConnectionContext connectionContext, Logger logger) {
         super(connectionContext, logger);
     }
 
+    @Override
     protected void handleRead(ByteBuffer buf, int bytesRead) throws BadAttributeException {
         if (bytesRead == -1) { // Did the other end close?
             fail();
@@ -56,7 +71,7 @@ public class MessageReadHandler extends ReadHandler {
                                 handleData(message);
                                 break;
                             case Constants.HEADERS_TYPE:
-                                handleHeaders(message, connectionContext);
+                                handleHeaders(message);
                                 break;
                             case Constants.SETTINGS_TYPE:
                                 handleSettings(message);
@@ -98,9 +113,8 @@ public class MessageReadHandler extends ReadHandler {
     /**
      * Handler for a Headers message
      *  @param m the Headers message
-     * @param connectionContext the connection context
      */
-    private void handleHeaders(Message m, ClientConnectionContext connectionContext) throws BadAttributeException {
+    private void handleHeaders(Message m) throws BadAttributeException {
         logger.log(Level.INFO, "Received message: " + m);
 
         Headers h = (Headers) m;
@@ -209,15 +223,30 @@ public class MessageReadHandler extends ReadHandler {
         logger.log(Level.INFO, "Received message: " + m);
     }
 
+    /**
+     * Sends a bad Headers
+     * @param headers headers
+     */
     private void sendHeaders(Headers headers){
         sendHeaders(headers, HeadersState.BAD, null);
     }
 
+    /**
+     * Sends a good Headers
+     * @param headers headers
+     * @param fileContext file for stream
+     */
     private void sendHeaders(Headers headers, FileContext fileContext){
         sendHeaders(headers, HeadersState.GOOD, fileContext);
 
     }
 
+    /**
+     * Sends a headers
+     * @param headers headers
+     * @param state state of the headers
+     * @param fileContext file context of stream
+     */
     private void sendHeaders(Headers headers, HeadersState state, FileContext fileContext){
         ByteBuffer buffer = ByteBuffer.wrap(connectionContext.getFramer().putFrame(headers.encode(connectionContext.getEncoder())));
         try {

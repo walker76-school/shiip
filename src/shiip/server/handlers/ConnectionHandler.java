@@ -1,3 +1,9 @@
+/*******************************************************
+ * Author: Andrew Walker
+ * Assignment: Prog 6
+ * Class: Data Comm
+ *******************************************************/
+
 package shiip.server.handlers;
 
 import shiip.server.handlers.read.HandshakeReadHandler;
@@ -11,6 +17,9 @@ import java.nio.channels.CompletionHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Handler for the connection establishment
+ */
 public class ConnectionHandler implements CompletionHandler<AsynchronousSocketChannel, Void> {
 
     // Size of the Handshake buffer
@@ -20,6 +29,12 @@ public class ConnectionHandler implements CompletionHandler<AsynchronousSocketCh
     private final String documentRoot;
     private Logger logger;
 
+    /**
+     * Constructs a ConnectionHandler from a server socket
+     * @param listenChannel the server socket
+     * @param documentRoot the root directory
+     * @param logger the logger
+     */
     public ConnectionHandler(AsynchronousServerSocketChannel listenChannel, String documentRoot, Logger logger) {
         this.listenChannel = listenChannel;
         this.documentRoot = documentRoot;
@@ -29,16 +44,7 @@ public class ConnectionHandler implements CompletionHandler<AsynchronousSocketCh
     @Override
     public void completed(AsynchronousSocketChannel clntChan, Void attachment) {
         listenChannel.accept(null, this);
-        try {
-            handleAccept(clntChan);
-        } catch (IOException e) {
-            try{
-                clntChan.close();
-            } catch (IOException ex){
-                failed(ex, null);
-            }
-            failed(e, null);
-        }
+        handleAccept(clntChan);
     }
 
     @Override
@@ -51,7 +57,7 @@ public class ConnectionHandler implements CompletionHandler<AsynchronousSocketCh
      *
      * @param clntChan channel of new client
      */
-    public void handleAccept(final AsynchronousSocketChannel clntChan) throws IOException {
+    public void handleAccept(final AsynchronousSocketChannel clntChan) {
 
         // Create Connection Context
         ClientConnectionContext connectionContext = new ClientConnectionContext(documentRoot, clntChan);

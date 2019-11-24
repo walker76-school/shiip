@@ -1,3 +1,9 @@
+/*******************************************************
+ * Author: Andrew Walker
+ * Assignment: Prog 6
+ * Class: Data Comm
+ *******************************************************/
+
 package shiip.server.handlers.write;
 
 import shiip.serialization.BadAttributeException;
@@ -14,12 +20,20 @@ import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
 
+/**
+ * A write handler for writing data frames
+ */
 public class FileWriteHandler extends WriteHandler {
 
     private static Random rand = new Random();
 
     private int toRemove;
 
+    /**
+     * Constructs a FileWriteHandler from a given context and logger
+     * @param context client context
+     * @param logger logger
+     */
     public FileWriteHandler(ClientConnectionContext context, Logger logger) {
         super(context, logger);
         toRemove = -1;

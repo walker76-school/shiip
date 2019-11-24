@@ -1,3 +1,9 @@
+/*******************************************************
+ * Author: Andrew Walker
+ * Assignment: Prog 6
+ * Class: Data Comm
+ *******************************************************/
+
 package shiip.server.handlers.read;
 
 import shiip.serialization.BadAttributeException;
@@ -9,11 +15,19 @@ import java.nio.channels.CompletionHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Generic ReadHandler for reading from a client
+ */
 public abstract class ReadHandler implements CompletionHandler<Integer, ByteBuffer> {
 
     protected final ClientConnectionContext connectionContext;
     protected final Logger logger;
 
+    /**
+     * Constructs a generic ReadHandler from a client context and logger
+     * @param connectionContext client context
+     * @param logger logger
+     */
     public ReadHandler(ClientConnectionContext connectionContext, Logger logger) {
         this.connectionContext = connectionContext;
         this.logger = logger;
@@ -34,6 +48,9 @@ public abstract class ReadHandler implements CompletionHandler<Integer, ByteBuff
         fail();
     }
 
+    /**
+     * Internal fail to close the socket
+     */
     protected void fail(){
         try {
             connectionContext.getClntSock().close();
@@ -42,5 +59,11 @@ public abstract class ReadHandler implements CompletionHandler<Integer, ByteBuff
         }
     }
 
+    /**
+     * Handles next actions after a read is completed
+     * @param buf the bytes read
+     * @param bytesRead number of bytes read
+     * @throws BadAttributeException if invalid message
+     */
     protected abstract void handleRead(ByteBuffer buf, int bytesRead) throws BadAttributeException;
 }

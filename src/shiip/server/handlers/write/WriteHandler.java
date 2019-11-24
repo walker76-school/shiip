@@ -1,3 +1,9 @@
+/*******************************************************
+ * Author: Andrew Walker
+ * Assignment: Prog 6
+ * Class: Data Comm
+ *******************************************************/
+
 package shiip.server.handlers.write;
 
 import shiip.serialization.BadAttributeException;
@@ -9,12 +15,19 @@ import java.nio.channels.CompletionHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
+/**
+ * A generic write handler
+ */
 public abstract class WriteHandler implements CompletionHandler<Integer, ByteBuffer> {
 
     protected ClientConnectionContext context;
     protected Logger logger;
 
+    /**
+     * Constructs a WriteHandler from a given client context and logger
+     * @param context the client context
+     * @param logger logger
+     */
     public WriteHandler(ClientConnectionContext context, Logger logger) {
         this.context = context;
         this.logger = logger;
@@ -44,5 +57,10 @@ public abstract class WriteHandler implements CompletionHandler<Integer, ByteBuf
         }
     }
 
+    /**
+     * Handles the next actions when write is completed
+     * @throws IOException if communication problem
+     * @throws BadAttributeException if invalid messages
+     */
     protected abstract void handleWriteCompleted() throws IOException, BadAttributeException;
 }
