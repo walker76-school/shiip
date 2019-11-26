@@ -65,6 +65,10 @@ public class Client {
     private static Map<Integer, String> pathMap;
 
     public static void main(String[] args) {
+        runClient(args, ClientState.TLS);
+    }
+
+    public static void runClient(String[] args, ClientState state){
         if(args.length < MIN_ARGS){
             System.err.println("Usage: Client [host] [port] [paths...]");
             return;
@@ -73,7 +77,7 @@ public class Client {
         Decoder decoder = new Decoder(MAX_TABLE_SIZE, MAX_TABLE_SIZE);
 
         String host = args[HOST_NDX];
-        try (Socket socket = TLSFactory.getClientSocket(host, Integer.parseInt(args[PORT_NDX]))) {
+        try (Socket socket = state.equals(ClientState.TLS) ? TLSFactory.getClientSocket(host, Integer.parseInt(args[PORT_NDX])) : new Socket(host, Integer.parseInt(args[PORT_NDX]))) {
 
             Deframer deframer = openConnection(socket);
             Map<Integer, FileOutputStream> ongoingDownloads = new TreeMap<>();
