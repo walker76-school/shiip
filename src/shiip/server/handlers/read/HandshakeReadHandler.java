@@ -50,7 +50,8 @@ public class HandshakeReadHandler extends ReadHandler {
             String handshakeMessage = ServerUtils.b2s(handshake);
             if(!handshakeMessage.equals(HANDSHAKE_MESSAGE)){
                 logger.log(Level.WARNING, "Bad preface: " + handshakeMessage);
-                return; // Kill connection
+                fail(); // Kill connection
+                return;
             }
 
             // Send required data
