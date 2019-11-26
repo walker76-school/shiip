@@ -1,3 +1,9 @@
+/*******************************************************
+ * Author: Andrew Walker
+ * Assignment: Prog 6
+ * Class: Data Comm
+ *******************************************************/
+
 package shiip.serialization.test;
 
 import org.junit.jupiter.api.DisplayName;
@@ -6,19 +12,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import shiip.serialization.Constants;
-import shiip.serialization.Deframer;
-import shiip.serialization.Framer;
 import shiip.serialization.NIODeframer;
-
-import java.io.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+/**
+ * Tests the NIODeframer class
+ *
+ * @author Andrew Walker
+ */
 public class NIODeframerTest {
 
     /**
-     * Tests the getFrame of Deframer
+     * Tests the getFrame of NIODeframer
      */
     @Nested
     @DisplayName("getFrame")
@@ -108,7 +115,7 @@ public class NIODeframerTest {
         }
 
         /**
-         * Tests EOFException is thrown if missing headers
+         * Tests no exception is thrown if missing headers
          * @param headerLength the length of the header
          */
         @ParameterizedTest(name = "header = {0}")
@@ -124,7 +131,7 @@ public class NIODeframerTest {
         }
 
         /**
-         * Tests EOFException is thrown if underfull message
+         * Tests no exception is thrown if underfull message
          */
         @Test
         @DisplayName("Mismatched length")
