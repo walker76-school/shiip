@@ -26,18 +26,23 @@ public abstract class Message {
             throw new IllegalArgumentException("Invalid msgBytes");
         }
 
+        // Retrieve and validate message
         String fullMessage = new String(msgBytes, ENC);
         if (fullMessage.length() < MIN_MSG_LEN){
             throw new IllegalArgumentException("Invalid message");
         }
-        String op = String.valueOf(fullMessage.charAt(OP_NDX));
+
+        // Validate space in encoding
         char sp = fullMessage.charAt(SP_NDX);
         if(sp != ' '){
             throw new IllegalArgumentException("Missing space");
         }
 
+        // Get payload and op
         String payload = fullMessage.substring(PAYLOAD_NDX);
+        String op = String.valueOf(fullMessage.charAt(OP_NDX));
 
+        // Handle specific Message
         switch(op) {
             case QUERY_OP: return new Query(payload);
             case RESPONSE_OP: return new Response(payload);
