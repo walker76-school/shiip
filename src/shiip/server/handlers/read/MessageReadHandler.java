@@ -59,7 +59,7 @@ public class MessageReadHandler extends ReadHandler {
             connectionContext.getDeframer().feed(msgBytes);
 
             while(moreFrames) {
-                byte[] encodedMessage = connectionContext.getDeframer().getFrame();
+                byte[] encodedMessage = connectionContext.getDeframer().getFrame(new byte[]{});
 
                 if (encodedMessage != null) {
                     Message message = getMessage(encodedMessage, connectionContext.getDecoder());

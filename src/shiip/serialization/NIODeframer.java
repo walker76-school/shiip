@@ -1,6 +1,5 @@
 package shiip.serialization;
 
-import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Objects;
@@ -9,9 +8,6 @@ public class NIODeframer {
 
     // Maximum number of octets of the payload of the frame
     private static final int INITIAL_SIZE = 16387;
-
-    // Maximum number of octets of the payload of the frame
-    private static final int MAXIMUM_PAYLOAD_LENGTH_BYTES = 16384;
 
     private ByteBuffer buffer;
 
@@ -29,83 +25,73 @@ public class NIODeframer {
     public byte[] getFrame(byte[] msgBytes) throws NullPointerException, IllegalArgumentException {
         Objects.requireNonNull(buffer, "Byte buffer cannot be null");
 
-        ByteBuffer msgBuffer = ByteBuffer.wrap(msgBytes);
-        feed(msgBuffer);
+        feed(msgBytes);
 
+        // If we have enough for a length
         if(buffer.position() > Constants.LENGTH_BYTES){
-            byte[] bufferBytes = buffer.array();
 
+            // Decode length
+            byte[] bufferBytes = buffer.array();
             byte[] lengthArray = Arrays.copyOfRange(bufferBytes, 0, Constants.LENGTH_BYTES);
             int length = decodeInteger(lengthArray);
 
-            if(length > Constants.MAXIMUM_PAYLOAD_LENGTH_BYTES){
-                throw new IllegalArgumentException("Message too long");
-            }
-
-            // Read the rest of the message (header and payload)
+            // Calculate other lengths (header and payload)
             int messageLength = Constants.HEADER_BYTES + length;
             int totalLength = Constants.LENGTH_BYTES + messageLength;
 
+            // If at least the full message is in the buffer
             if(bufferBytes.length >= totalLength){
-                int oldPosition = buffer.position();
-                buffer.position(3);
-                byte[] returnBytes = new byte[messageLength];
-                for(int i = 0; i < messageLength; i++){
-                    returnBytes[i] = buffer.get();
+
+                // If it was an invalid length
+                if(length > Constants.MAXIMUM_PAYLOAD_LENGTH_BYTES){
+
+                    // Store the bound of the buffer
+                    int oldPosition = buffer.position();
+
+                    // Ignore totalLength bytes
+                    buffer.position(totalLength);
+
+                    // Copy the rest of the buffer to the start
+                    adjust(oldPosition);
+
+                    // Illegal argument
+                    throw new IllegalArgumentException("Message too long");
+                } else {
+                    // Store the bound of the buffer
+                    int oldPosition = buffer.position();
+
+                    // Ignore the length
+                    buffer.position(3);
+
+                    // Allocate for the encodedMessage
+                    byte[] returnBytes = new byte[messageLength];
+
+                    // Copy into the return buffer
+                    for(int i = 0; i < messageLength; i++){
+                        returnBytes[i] = buffer.get();
+                    }
+
+                    // Copy the rest of the buffer to the start
+                    adjust(oldPosition);
+
+                    // Return encoded Message
+                    return returnBytes;
                 }
-                adjust(oldPosition);
-                feed(msgBuffer);
-                return returnBytes;
             }
         }
 
         return null;
     }
 
-    public byte[] getFrame() throws NullPointerException, IllegalArgumentException {
-
-        if(buffer.position() > Constants.LENGTH_BYTES){
-            byte[] bufferBytes = buffer.array();
-
-            byte[] lengthArray = Arrays.copyOfRange(bufferBytes, 0, Constants.LENGTH_BYTES);
-            int length = decodeInteger(lengthArray);
-
-            if(length > Constants.MAXIMUM_PAYLOAD_LENGTH_BYTES){
-                throw new IllegalArgumentException("Message too long");
-            }
-
-            // Read the rest of the message (header and payload)
-            int messageLength = Constants.HEADER_BYTES + length;
-            int totalLength = Constants.LENGTH_BYTES + messageLength;
-
-            if(bufferBytes.length >= totalLength){
-                int oldPosition = buffer.position();
-                buffer.position(3);
-                byte[] returnBytes = new byte[messageLength];
-                for(int i = 0; i < messageLength; i++){
-                    returnBytes[i] = buffer.get();
-                }
-                adjust(oldPosition);
-                return returnBytes;
-            }
-        }
-
-        return null;
-    }
-
-    public void feed(byte[] msgBytes){
-        ByteBuffer msgBuffer = ByteBuffer.wrap(msgBytes);
-        feed(msgBuffer);
-    }
-
-    private void feed(ByteBuffer msgBuffer){
-        while(buffer.position() != buffer.limit() && msgBuffer.position() != msgBuffer.limit()){
-            buffer.put(msgBuffer.get());
-        }
+    public final void feed(byte[] msgBytes){
+        int bufferSize = buffer.position() + msgBytes.length;
+        byte[] oldArray = Arrays.copyOfRange(buffer.array(), 0, buffer.position());
+        buffer = ByteBuffer.allocate(bufferSize).put(oldArray).put(msgBytes);
     }
 
     private void adjust(int oldPosition){
-        ByteBuffer newBuffer = ByteBuffer.allocate(INITIAL_SIZE);
+        int size = oldPosition - buffer.position();
+        ByteBuffer newBuffer = ByteBuffer.allocate(size);
         while(buffer.position() != oldPosition){
             newBuffer.put(buffer.get());
         }
