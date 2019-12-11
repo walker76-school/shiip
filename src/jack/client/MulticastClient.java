@@ -43,6 +43,8 @@ public class MulticastClient {
                 line = in.nextLine();
             }
 
+            disconnectSocket(args, sock);
+
         } catch (NumberFormatException e){
             System.err.println("Bad parameters: Invalid port");
         } catch(IOException e){
@@ -66,5 +68,19 @@ public class MulticastClient {
         sock.joinGroup(addr);
 
         return sock;
+    }
+
+    /**
+     * Connects the datagram socket to the given host and port
+     * @param args the command line args
+     * @param socket the socket to disconnect
+     * @throws IOException if communication problem
+     */
+    private static void disconnectSocket(String[] args, MulticastSocket socket) throws IOException {
+
+        // Disconnect from the server
+        InetAddress addr = InetAddress.getByName(args[HOST_NDX]);
+        socket.leaveGroup(addr);
+        socket.close();
     }
 }
