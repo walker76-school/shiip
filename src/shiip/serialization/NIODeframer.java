@@ -23,7 +23,7 @@ public class NIODeframer {
      * @throws IllegalArgumentException if bad input value (e.g., bad length)
      */
     public byte[] getFrame(byte[] msgBytes) throws NullPointerException, IllegalArgumentException {
-        Objects.requireNonNull(buffer, "Byte buffer cannot be null");
+        Objects.requireNonNull(msgBytes, "Bytes cannot be null");
 
         feed(msgBytes);
 
@@ -38,6 +38,8 @@ public class NIODeframer {
             // Calculate other lengths (header and payload)
             int messageLength = Constants.HEADER_BYTES + length;
             int totalLength = Constants.LENGTH_BYTES + messageLength;
+
+            boolean badLength = length > Constants.MAXIMUM_PAYLOAD_LENGTH_BYTES;
 
             // If at least the full message is in the buffer
             if(bufferBytes.length >= totalLength){
@@ -77,6 +79,10 @@ public class NIODeframer {
                     // Return encoded Message
                     return returnBytes;
                 }
+            }
+
+            if(badLength){
+                throw new IllegalArgumentException("Message too long");
             }
         }
 
